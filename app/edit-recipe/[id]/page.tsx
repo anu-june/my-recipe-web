@@ -11,7 +11,7 @@ type Recipe = {
     slug: string;
     category: string;
     cuisine: string | null;
-    servings: number | null;
+    servings: string | null;
     prep_time_minutes: number | null;
     cook_time_minutes: number | null;
     total_time_minutes: number | null;
@@ -73,7 +73,7 @@ export default function EditRecipePage({
                 slug: recipe.slug || '',
                 category: recipe.category || '',
                 cuisine: recipe.cuisine || '',
-                servings: recipe.servings?.toString() || '',
+                servings: recipe.servings || '',
                 prep_time_minutes: recipe.prep_time_minutes?.toString() || '',
                 cook_time_minutes: recipe.cook_time_minutes?.toString() || '',
                 total_time_minutes: recipe.total_time_minutes?.toString() || '',
@@ -146,10 +146,21 @@ export default function EditRecipePage({
         const { name, value, type } = e.target;
         const checked = (e.target as HTMLInputElement).checked;
 
-        setFormData(prev => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }));
+        setFormData(prev => {
+            const updated = {
+                ...prev,
+                [name]: type === 'checkbox' ? checked : value
+            };
+
+            // Auto-calculate total time when prep or cook time changes
+            if (name === 'prep_time_minutes' || name === 'cook_time_minutes') {
+                const prepTime = name === 'prep_time_minutes' ? parseInt(value) || 0 : parseInt(updated.prep_time_minutes) || 0;
+                const cookTime = name === 'cook_time_minutes' ? parseInt(value) || 0 : parseInt(updated.cook_time_minutes) || 0;
+                updated.total_time_minutes = (prepTime + cookTime).toString();
+            }
+
+            return updated;
+        });
 
         // Auto-generate slug from title
         if (name === 'title') {
@@ -175,7 +186,7 @@ export default function EditRecipePage({
                     slug: formData.slug,
                     category: formData.category,
                     cuisine: formData.cuisine || null,
-                    servings: formData.servings ? parseInt(formData.servings) : null,
+                    servings: formData.servings || null,
                     prep_time_minutes: formData.prep_time_minutes ? parseInt(formData.prep_time_minutes) : null,
                     cook_time_minutes: formData.cook_time_minutes ? parseInt(formData.cook_time_minutes) : null,
                     total_time_minutes: formData.total_time_minutes ? parseInt(formData.total_time_minutes) : null,
@@ -318,13 +329,13 @@ export default function EditRecipePage({
                                     Servings
                                 </label>
                                 <input
-                                    type="number"
+                                    type="text"
                                     id="servings"
                                     name="servings"
                                     value={formData.servings}
                                     onChange={handleChange}
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                                    placeholder="4"
+                                    placeholder="4-6 servings"
                                 />
                             </div>
                             <div>
@@ -357,16 +368,16 @@ export default function EditRecipePage({
                             </div>
                             <div>
                                 <label htmlFor="total_time_minutes" className="block text-sm font-semibold text-gray-700 mb-2">
-                                    Total (min)
+                                    Total (min) <span className="text-xs font-normal text-gray-500">(auto-calculated)</span>
                                 </label>
                                 <input
                                     type="number"
                                     id="total_time_minutes"
                                     name="total_time_minutes"
                                     value={formData.total_time_minutes}
-                                    onChange={handleChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                                    placeholder="35"
+                                    readOnly
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
+                                    placeholder="Auto"
                                 />
                             </div>
                         </div>

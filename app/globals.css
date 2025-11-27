@@ -2,28 +2,86 @@
 @plugin "@tailwindcss/typography";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fdfbf7;
+  /* Warm off-white */
+  --foreground: #2d2a26;
+  /* Soft black */
+
+  /* Sage Green Palette */
+  --sage-50: #f4f7f4;
+  --sage-100: #e3ebe3;
+  --sage-200: #c5d6c6;
+  --sage-300: #a3bda5;
+  --sage-400: #849b87;
+  --sage-500: #68806b;
+  --sage-600: #526655;
+  --sage-700: #405043;
+  --sage-800: #323d34;
+  --sage-900: #2a332c;
+
+  /* Terracotta Palette */
+  --terracotta-50: #fdf6f4;
+  --terracotta-100: #faeadd;
+  --terracotta-200: #f5d0bc;
+  --terracotta-300: #edb196;
+  --terracotta-400: #e28e6e;
+  --terracotta-500: #d07c64;
+  --terracotta-600: #b8624c;
+  --terracotta-700: #964d3b;
+  --terracotta-800: #7d4134;
+  --terracotta-900: #66382f;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-heading);
+  --font-body: var(--font-body);
+
+  --color-sage-50: var(--sage-50);
+  --color-sage-100: var(--sage-100);
+  --color-sage-200: var(--sage-200);
+  --color-sage-300: var(--sage-300);
+  --color-sage-400: var(--sage-400);
+  --color-sage-500: var(--sage-500);
+  --color-sage-600: var(--sage-600);
+  --color-sage-700: var(--sage-700);
+  --color-sage-800: var(--sage-800);
+  --color-sage-900: var(--sage-900);
+
+  --color-terracotta-50: var(--terracotta-50);
+  --color-terracotta-100: var(--terracotta-100);
+  --color-terracotta-200: var(--terracotta-200);
+  --color-terracotta-300: var(--terracotta-300);
+  --color-terracotta-400: var(--terracotta-400);
+  --color-terracotta-500: var(--terracotta-500);
+  --color-terracotta-600: var(--terracotta-600);
+  --color-terracotta-700: var(--terracotta-700);
+  --color-terracotta-800: var(--terracotta-800);
+  --color-terracotta-900: var(--terracotta-900);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #fdfbf7;
+    /* Force light mode for theme consistency */
+    --foreground: #2d2a26;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body), sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading), serif;
 }
 
 /* Markdown table styling */
