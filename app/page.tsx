@@ -4,6 +4,8 @@ import Link from 'next/link';
 import RecipeList from './components/RecipeList';
 import type { RecipeListItem } from '@/lib/types';
 
+export const revalidate = 0; // Disable static caching to show new recipes immediately
+
 export default async function Home() {
   const { data, error } = await supabase
     .from('recipes')
@@ -17,8 +19,11 @@ export default async function Home() {
       {/* Hero Section with Background Image */}
       <div className="relative h-64 md:h-80 w-full overflow-hidden">
         <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: "url('/header-bg.png')" }}
+          className="absolute inset-0 bg-center bg-no-repeat"
+          style={{
+            backgroundImage: "url('/header-bg.png')",
+            backgroundSize: '100% auto'
+          }}
         ></div>
         <div className="absolute inset-0 bg-black/30"></div> {/* Overlay for text readability */}
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
