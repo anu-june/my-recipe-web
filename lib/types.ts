@@ -19,7 +19,11 @@ export type Recipe = {
 };
 
 // For list views that don't need all fields
-export type RecipeListItem = Pick<Recipe, 'id' | 'title' | 'category'>;
+export type RecipeListItem = {
+    id: string;
+    title: string;
+    category: string | null;
+};
 
 // For recipe detail view
 export type RecipeDetail = Omit<Recipe, 'slug' | 'is_published' | 'created_at'>;
