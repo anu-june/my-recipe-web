@@ -22,70 +22,141 @@ export async function POST(request: NextRequest) {
         const urlRegex = /^(https?:\/\/[^\s]+)/;
 
         if (urlRegex.test(input)) {
-            try {
-                console.log('Fetching URL:', input);
-                const response = await fetch(input, {
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-                        'Accept-Language': 'en-US,en;q=0.9',
-                        'Cache-Control': 'no-cache',
-                        'Pragma': 'no-cache',
-                        'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-                        'Sec-Ch-Ua-Mobile': '?0',
-                        'Sec-Ch-Ua-Platform': '"Windows"',
-                        'Sec-Fetch-Dest': 'document',
-                        'Sec-Fetch-Mode': 'navigate',
-                        'Sec-Fetch-Site': 'none',
-                        'Sec-Fetch-User': '?1',
-                        'Upgrade-Insecure-Requests': '1'
-                    },
-                    signal: AbortSignal.timeout(10000) // 10 second timeout
-                });
+            // Check if it's a YouTube URL
+            const youtubeRegex = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/;
+            const youtubeMatch = input.match(youtubeRegex);
 
-                if (response.ok) {
-                    const html = await response.text();
-                    console.log('Successfully fetched URL, length:', html.length);
+            if (youtubeMatch && youtubeMatch[1]) {
+                const videoId = youtubeMatch[1];
+                console.log('Detected YouTube video:', videoId);
 
-                    // Try to extract JSON-LD first (most reliable for recipes)
-                    const jsonLdMatch = html.match(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/i);
+                try {
+                    // Fetch YouTube page to extract description from meta tags
+                    const ytResponse = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                            'Accept-Language': 'en-US,en;q=0.9',
+                        },
+                        signal: AbortSignal.timeout(10000)
+                    });
 
-                    if (jsonLdMatch && jsonLdMatch[1]) {
-                        try {
-                            const jsonLd = JSON.parse(jsonLdMatch[1]);
-                            // Find the Recipe object in the JSON-LD
-                            // It could be the object itself, or inside an array, or in a @graph
-                            let recipeObject = null;
+                    if (ytResponse.ok) {
+                        const html = await ytResponse.text();
 
-                            const findRecipe = (obj: any): any => {
-                                if (!obj) return null;
-                                if (Array.isArray(obj)) {
-                                    for (const item of obj) {
-                                        const found = findRecipe(item);
-                                        if (found) return found;
-                                    }
-                                } else if (typeof obj === 'object') {
-                                    if (obj['@type'] === 'Recipe' || (Array.isArray(obj['@type']) && obj['@type'].includes('Recipe'))) {
-                                        return obj;
-                                    }
-                                    // Check @graph if present
-                                    if (obj['@graph']) {
-                                        return findRecipe(obj['@graph']);
-                                    }
-                                    // Check other properties recursively if needed, but usually it's top level or in graph
+                        // Extract title from meta tag
+                        const titleMatch = html.match(/<meta name="title" content="([^"]+)"/);
+                        const title = titleMatch ? titleMatch[1] : '';
+
+                        // Extract description from meta tag
+                        const descMatch = html.match(/<meta name="description" content="([^"]+)"/);
+                        const description = descMatch ? descMatch[1] : '';
+
+                        // Also try to get more detailed description from JSON-LD or other sources
+                        const jsonMatch = html.match(/<script[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/);
+                        let fullDescription = description;
+
+                        if (jsonMatch) {
+                            try {
+                                const jsonData = JSON.parse(jsonMatch[1]);
+                                if (jsonData.description) {
+                                    fullDescription = jsonData.description;
                                 }
-                                return null;
-                            };
+                            } catch (e) {
+                                // Ignore JSON parse errors
+                            }
+                        }
 
-                            recipeObject = findRecipe(jsonLd);
+                        if (fullDescription) {
+                            console.log('Extracted YouTube description, length:', fullDescription.length);
+                            contentToParse = `Video Title: ${title}\n\nDescription:\n${fullDescription}`;
+                        } else {
+                            console.warn('No description found in YouTube video');
+                            contentToParse = `Video Title: ${title}\n\nNote: No description found. Please paste the recipe from the video description manually.`;
+                        }
+                    } else {
+                        console.warn('Failed to fetch YouTube page');
+                    }
+                } catch (ytError) {
+                    console.error('YouTube extraction error:', ytError);
+                    // Fall back to regular processing
+                }
+            } else {
+                // Regular URL (not YouTube)
+                try {
+                    console.log('Fetching URL:', input);
+                    const response = await fetch(input, {
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+                            'Accept-Language': 'en-US,en;q=0.9',
+                            'Cache-Control': 'no-cache',
+                            'Pragma': 'no-cache',
+                            'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+                            'Sec-Ch-Ua-Mobile': '?0',
+                            'Sec-Ch-Ua-Platform': '"Windows"',
+                            'Sec-Fetch-Dest': 'document',
+                            'Sec-Fetch-Mode': 'navigate',
+                            'Sec-Fetch-Site': 'none',
+                            'Sec-Fetch-User': '?1',
+                            'Upgrade-Insecure-Requests': '1'
+                        },
+                        signal: AbortSignal.timeout(10000) // 10 second timeout
+                    });
 
-                            if (recipeObject) {
-                                console.log('Found JSON-LD Recipe object!');
-                                // Use the structured data as the input for Gemini to normalize
-                                contentToParse = JSON.stringify(recipeObject);
-                            } else {
-                                console.log('JSON-LD found but no Recipe object detected, falling back to HTML text');
-                                // Fallback to HTML text cleaning
+                    if (response.ok) {
+                        const html = await response.text();
+                        console.log('Successfully fetched URL, length:', html.length);
+
+                        // Try to extract JSON-LD first (most reliable for recipes)
+                        const jsonLdMatch = html.match(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/i);
+
+                        if (jsonLdMatch && jsonLdMatch[1]) {
+                            try {
+                                const jsonLd = JSON.parse(jsonLdMatch[1]);
+                                // Find the Recipe object in the JSON-LD
+                                // It could be the object itself, or inside an array, or in a @graph
+                                let recipeObject = null;
+
+                                const findRecipe = (obj: any): any => {
+                                    if (!obj) return null;
+                                    if (Array.isArray(obj)) {
+                                        for (const item of obj) {
+                                            const found = findRecipe(item);
+                                            if (found) return found;
+                                        }
+                                    } else if (typeof obj === 'object') {
+                                        if (obj['@type'] === 'Recipe' || (Array.isArray(obj['@type']) && obj['@type'].includes('Recipe'))) {
+                                            return obj;
+                                        }
+                                        // Check @graph if present
+                                        if (obj['@graph']) {
+                                            return findRecipe(obj['@graph']);
+                                        }
+                                        // Check other properties recursively if needed, but usually it's top level or in graph
+                                    }
+                                    return null;
+                                };
+
+                                recipeObject = findRecipe(jsonLd);
+
+                                if (recipeObject) {
+                                    console.log('Found JSON-LD Recipe object!');
+                                    // Use the structured data as the input for Gemini to normalize
+                                    contentToParse = JSON.stringify(recipeObject);
+                                } else {
+                                    console.log('JSON-LD found but no Recipe object detected, falling back to HTML text');
+                                    // Fallback to HTML text cleaning
+                                    contentToParse = html
+                                        .replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gm, '')
+                                        .replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gm, '')
+                                        .replace(/<[^>]+>/g, ' ')
+                                        .replace(/\s+/g, ' ')
+                                        .trim()
+                                        .slice(0, 40000);
+                                }
+                            } catch (e) {
+                                console.warn('Failed to parse JSON-LD, falling back to HTML text', e);
                                 contentToParse = html
                                     .replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gm, '')
                                     .replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gm, '')
@@ -94,35 +165,26 @@ export async function POST(request: NextRequest) {
                                     .trim()
                                     .slice(0, 40000);
                             }
-                        } catch (e) {
-                            console.warn('Failed to parse JSON-LD, falling back to HTML text', e);
+                        } else {
+                            // No JSON-LD, standard cleanup
                             contentToParse = html
                                 .replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gm, '')
                                 .replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gm, '')
                                 .replace(/<[^>]+>/g, ' ')
                                 .replace(/\s+/g, ' ')
                                 .trim()
-                                .slice(0, 40000);
+                                .slice(0, 40000); // Increased limit
                         }
                     } else {
-                        // No JSON-LD, standard cleanup
-                        contentToParse = html
-                            .replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gm, '')
-                            .replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gm, '')
-                            .replace(/<[^>]+>/g, ' ')
-                            .replace(/\s+/g, ' ')
-                            .trim()
-                            .slice(0, 40000); // Increased limit
+                        console.warn(`Failed to fetch URL: ${response.status} ${response.statusText}`);
+                        // If 403/406, it's likely bot protection. 
+                        // We'll still try to pass the URL to Gemini as a fallback, 
+                        // but we might want to inform the user or try a different strategy.
                     }
-                } else {
-                    console.warn(`Failed to fetch URL: ${response.status} ${response.statusText}`);
-                    // If 403/406, it's likely bot protection. 
-                    // We'll still try to pass the URL to Gemini as a fallback, 
-                    // but we might want to inform the user or try a different strategy.
+                } catch (fetchError) {
+                    console.error('Fetch error:', fetchError);
+                    // Continue with raw URL
                 }
-            } catch (fetchError) {
-                console.error('Fetch error:', fetchError);
-                // Continue with raw URL
             }
         }
 
