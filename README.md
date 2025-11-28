@@ -97,6 +97,7 @@ recipe-web/
 
 2. **Content Extraction**
    - **For URLs**: Fetches HTML with browser-like headers
+   - **For YouTube**: Detects video URL, extracts full description from `ytInitialData` (embedded JSON), and parses recipe from video description
    - **JSON-LD Priority**: Searches for `application/ld+json` schema
    - **Fallback**: Strips HTML tags and extracts text content
 
@@ -115,7 +116,7 @@ recipe-web/
 **Ingredients**: `Ingredient – quantity` (flat list, marination exception)  
 **Steps**: Numbered with repeated quantities  
 **Notes**: Tips + Source URL  
-**Units**: Standardized (cups, tbsp, tsp, grams, ml)
+**Units**: Standardized (cups, tbsp, tsp, grams, ml) with automatic mL to cups conversion
 
 ## 🎨 Design System
 
