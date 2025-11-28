@@ -10,6 +10,7 @@
     "migrate": "tsx scripts/migrate-recipes.ts"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.84.0",
     "@tailwindcss/typography": "^0.5.19",
     "next": "16.0.4",

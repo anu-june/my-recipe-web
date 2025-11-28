@@ -17,9 +17,9 @@ export default function RecipeList({ initialRecipes }: { initialRecipes: RecipeL
         });
     }, [initialRecipes, searchQuery]);
 
-    // Group recipes by category
+    // Group recipes by category and sort alphabetically within each category
     const groupedRecipes = useMemo(() => {
-        return filteredRecipes.reduce((acc, recipe) => {
+        const grouped = filteredRecipes.reduce((acc, recipe) => {
             const category = recipe.category || 'Uncategorized';
             if (!acc[category]) {
                 acc[category] = [];
@@ -27,6 +27,13 @@ export default function RecipeList({ initialRecipes }: { initialRecipes: RecipeL
             acc[category].push(recipe);
             return acc;
         }, {} as Record<string, RecipeListItem[]>);
+
+        // Sort recipes alphabetically within each category
+        Object.keys(grouped).forEach(category => {
+            grouped[category].sort((a, b) => a.title.localeCompare(b.title));
+        });
+
+        return grouped;
     }, [filteredRecipes]);
 
     // Sort categories alphabetically, but keep "Uncategorized" last if it exists

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { formatIngredients, formatSteps } from '@/lib/recipeFormatters';
 import { validateRecipe, ValidationErrors } from '@/lib/validation';
+import RecipeImporter from '../components/RecipeImporter';
 
 export default function AddRecipePage() {
     const router = useRouter();
@@ -30,6 +31,25 @@ export default function AddRecipePage() {
     });
 
     // Formatters are now imported from shared utilities
+
+    const handleRecipeParsed = (recipe: any, sourceUrl?: string) => {
+        setFormData(prev => ({
+            ...prev,
+            title: recipe.title || '',
+            category: recipe.category || '',
+            cuisine: recipe.cuisine || '',
+            servings: recipe.servings || '',
+            prep_time_minutes: recipe.prep_time_minutes?.toString() || '',
+            cook_time_minutes: recipe.cook_time_minutes?.toString() || '',
+            total_time_minutes: recipe.total_time_minutes?.toString() || '',
+            ingredients: recipe.ingredients || '',
+            steps: recipe.steps || '',
+            notes: recipe.notes || '',
+            source_url: sourceUrl || recipe.source_url || prev.source_url,
+            // Generate slug from title immediately
+            slug: recipe.title ? recipe.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') : ''
+        }));
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value, type } = e.target;
@@ -136,6 +156,9 @@ export default function AddRecipePage() {
                         Add New Recipe
                     </h1>
                     <p className="text-gray-600 mb-8">Fill in the details to add a new recipe to your collection</p>
+
+                    {/* AI Recipe Importer */}
+                    <RecipeImporter onRecipeParsed={handleRecipeParsed} />
 
                     {error && (
                         <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-r-lg">
