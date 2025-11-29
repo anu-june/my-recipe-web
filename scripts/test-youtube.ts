@@ -1,4 +1,4 @@
-const videoId = 'JsZKu2L6eAc';
+const videoId = process.argv[2] || 'usZvYCHmMD4';
 
 async function testYouTube() {
     try {

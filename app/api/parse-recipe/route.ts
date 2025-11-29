@@ -100,14 +100,24 @@ export async function POST(request: NextRequest) {
                             contentToParse = `Video Title: ${title}\n\nDescription:\n${fullDescription}`;
                         } else {
                             console.warn('No description found in YouTube video');
-                            contentToParse = `Video Title: ${title}\n\nNote: No description found. Please paste the recipe from the video description manually.`;
+                            return NextResponse.json(
+                                { error: 'Could not retrieve video description. Please paste the recipe manually.' },
+                                { status: 422 }
+                            );
                         }
                     } else {
                         console.warn('Failed to fetch YouTube page');
+                        return NextResponse.json(
+                            { error: 'Failed to access YouTube video. Please paste the recipe manually.' },
+                            { status: 422 }
+                        );
                     }
                 } catch (ytError) {
                     console.error('YouTube extraction error:', ytError);
-                    // Fall back to regular processing
+                    return NextResponse.json(
+                        { error: 'Error processing YouTube video. Please paste the recipe manually.' },
+                        { status: 500 }
+                    );
                 }
             } else {
                 // Regular URL (not YouTube)
@@ -203,15 +213,28 @@ export async function POST(request: NextRequest) {
                                 .trim()
                                 .slice(0, 40000); // Increased limit
                         }
+
+                        // Check if content is empty or too short
+                        if (!contentToParse || contentToParse.length < 50) {
+                            return NextResponse.json(
+                                { error: 'Could not extract meaningful content from the URL. Please paste the recipe manually.' },
+                                { status: 422 }
+                            );
+                        }
+
                     } else {
                         console.warn(`Failed to fetch URL: ${response.status} ${response.statusText}`);
-                        // If 403/406, it's likely bot protection. 
-                        // We'll still try to pass the URL to Gemini as a fallback, 
-                        // but we might want to inform the user or try a different strategy.
+                        return NextResponse.json(
+                            { error: `Failed to access URL (${response.status}). The site might be blocking bots. Please paste the recipe manually.` },
+                            { status: 422 }
+                        );
                     }
                 } catch (fetchError) {
                     console.error('Fetch error:', fetchError);
-                    // Continue with raw URL
+                    return NextResponse.json(
+                        { error: 'Error fetching URL. Please ensure the URL is correct or paste the recipe manually.' },
+                        { status: 500 }
+                    );
                 }
             }
         }
@@ -226,12 +249,10 @@ ${contentToParse}
 INSTRUCTIONS:
 1. If it's a URL, imagine you're reading the recipe content from that page.
 2. Extract and structure the recipe information into a consistent template.
+3. STRICTLY use only the information provided in the input. DO NOT hallucinate or invent ingredients or steps. If the input does not contain a recipe, return a JSON with an "error" field explaining why.
 
 FORMATTING RULES:
 
-
-INGREDIENTS:
-- Format each line as: "Ingredient – quantity" (Use an en-dash '–' separator).
 - Standardize units: PREFER cups, tbsp, tsp for liquids. Use grams for solids when metric.
 - Convert mL to cups (240 mL = 1 cup, 120 mL = 1/2 cup, 60 mL = 1/4 cup, etc.).
 - List ALL ingredients in a single flat list.
