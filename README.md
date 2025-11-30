@@ -9,6 +9,7 @@ A modern, elegant recipe management application built with Next.js, featuring AI
 - **AI Recipe Import**: Import recipes from any URL or raw text using Google Gemini 2.0
 - **Smart Organization**: Recipes automatically grouped by category and sorted alphabetically
 - **Search**: Quick search across recipe titles and categories
+- **Progressive Web App (PWA)**: Install on mobile/desktop, works offline, fast caching
 - **Responsive Design**: Beautiful, minimal interface with earth-tone aesthetics
 
 ### AI-Powered Import
@@ -31,6 +32,7 @@ A modern, elegant recipe management application built with Next.js, featuring AI
 **Backend**
 - **Database**: Supabase (PostgreSQL)
 - **AI**: Google Gemini 2.0 Flash
+- **PWA**: @ducanh2912/next-pwa with Workbox
 - **Deployment**: Vercel
 
 ### Project Structure
@@ -60,7 +62,11 @@ recipe-web/
 │   ├── recipeFormatters.ts       # Ingredient/step formatters
 │   └── validation.ts             # Form validation utilities
 └── public/
-    └── header-bg.png             # Hero section background
+    ├── header-bg.png             # Hero section background
+    ├── icon.svg                  # PWA app icon (SVG)
+    ├── icon-192.png              # PWA icon 192x192
+    ├── icon-512.png              # PWA icon 512x512
+    └── manifest.json             # PWA manifest
 
 ```
 
@@ -204,7 +210,34 @@ alter table recipes enable row level security;
 create policy "Allow all operations" on recipes for all using (true);
 ```
 
-## 📦 Deployment
+## � Progressive Web App (PWA)
+
+### Installation
+
+**Desktop (Chrome/Edge)**
+- Look for the install icon in the address bar
+- Click "Install Recipe Collection"
+
+**Mobile - Android (Chrome)**
+- Tap the menu (⋮) → "Install App" or "Add to Home Screen"
+- Or wait for the automatic install banner
+
+**Mobile - iOS (Safari)**
+- Tap the Share button → "Add to Home Screen"
+
+### Offline Functionality
+- **Caching Strategy**: 
+  - Images cached for 7 days
+  - API responses cached for 5 minutes (NetworkFirst)
+  - Previously visited pages work offline
+- **Service Worker**: Auto-generated, disabled in development mode
+
+### Build Considerations
+- Production builds require `--webpack` flag (configured in `package.json`)
+- PWA not active in development (`npm run dev`)
+- Icons: SVG with PNG fallbacks for compatibility
+
+## �📦 Deployment
 
 ### Vercel Deployment
 
@@ -217,7 +250,7 @@ create policy "Allow all operations" on recipes for all using (true);
 
 ### Build Command
 ```bash
-npm run build
+npm run build  # Uses --webpack flag for PWA compatibility
 ```
 
 ## 🔑 Key Features Explained
