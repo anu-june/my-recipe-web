@@ -181,3 +181,46 @@ A review of the current recipe application codebase, focusing on the new AI impo
 ### 1. Unused Packages?
 - **File**: `package.json`
 - **Issue**: `react-markdown` is listed. Verify if it's actually used in the application (e.g., for rendering notes). If not, remove it to reduce bundle size.
+
+---
+
+## 📱 PWA Implementation Review (Added: 2025-11-30)
+
+### 🔴 Critical Issues
+
+#### 1. Build Configuration Conflict
+- **File**: `next.config.ts`
+- **Issue**: The app has a webpack config from `@ducanh2912/next-pwa` but Next.js 16 defaults to Turbopack. Production builds fail without `--webpack` flag.
+- **Current Workaround**: `turbopack: {}` silences error but doesn't fix compatibility
+- **Impact**: Inconsistent build behavior, production builds require manual flag
+- **Fix**: Update `package.json` build script to `"build": "next build --webpack"`
+
+#### 2. Missing PNG Icon Fallbacks
+- **File**: `public/manifest.json`
+- **Issue**: Only SVG icons provided. Older Android devices and some iOS versions don't support SVG icons in PWA manifests.
+- **Impact**: Icon may not display on older devices, default browser icon shown instead
+- **Fix**: Generate PNG versions (192x192 and 512x512) and add to manifest
+
+#### 3. Aggressive Caching Strategy
+- **File**: `next.config.ts`
+- **Issue**: `aggressiveFrontEndNavCaching: true` may cause users to see stale recipe data
+- **Impact**: Database updates not reflected immediately, no cache invalidation strategy
+- **Fix**: Adjust caching for dynamic Supabase data, add runtime caching rules for API endpoints
+
+### 🟡 Medium Priority Issues
+
+#### 4. No Offline Fallback Page
+- **Issue**: When offline, uncached routes show generic browser error
+- **Fix**: Add offline fallback page in workbox config with proper runtime caching
+
+#### 5. Import Order
+- **File**: `next.config.ts` (line 9)
+- **Issue**: Import statement appears after `nextConfig` declaration
+- **Fix**: Move imports to the top of the file
+
+### ✅ Positive Observations
+- Service worker disabled in development ✓
+- Proper manifest structure ✓
+- Good theme color and metadata ✓
+- Appropriate icon design ✓
+
