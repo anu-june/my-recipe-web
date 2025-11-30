@@ -1,5 +1,30 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="100" fill="#f59e0b"/>
-  <path d="M256 128c-70.7 0-128 57.3-128 128 0 70.7 57.3 128 128 128s128-57.3 128-128c0-70.7-57.3-128-128-128zm0 224c-53 0-96-43-96-96s43-96 96-96 96 43 96 96-43 96-96 96z" fill="#fff"/>
-  <path d="M256 160c-53 0-96 43-96 96s43 96 96 96 96-43 96-96-43-96-96-96zm0 160c-35.3 0-64-28.7-64-64s28.7-64 64-64 64 28.7 64 64-28.7 64-64 64z" fill="#f59e0b"/>
+  <!-- Background -->
+  <rect width="512" height="512" rx="115" fill="#f59e0b"/>
+  
+  <!-- Chef's hat -->
+  <g transform="translate(256, 256)">
+    <!-- Hat base -->
+    <rect x="-85" y="60" width="170" height="35" rx="8" fill="#ffffff"/>
+    
+    <!-- Hat puff top -->
+    <ellipse cx="-50" cy="20" rx="35" ry="45" fill="#ffffff"/>
+    <ellipse cx="0" cy="0" rx="45" ry="55" fill="#ffffff"/>
+    <ellipse cx="50" cy="20" rx="35" ry="45" fill="#ffffff"/>
+    
+    <!-- Utensils -->
+    <!-- Fork -->
+    <g transform="translate(-50, -20)">
+      <rect x="-3" y="50" width="6" height="80" rx="3" fill="#fbbf24"/>
+      <rect x="-12" y="40" width="5" height="30" rx="2.5" fill="#fbbf24"/>
+      <rect x="-3" y="40" width="5" height="30" rx="2.5" fill="#fbbf24"/>
+      <rect x="6" y="40" width="5" height="30" rx="2.5" fill="#fbbf24"/>
+    </g>
+    
+    <!-- Spoon -->
+    <g transform="translate(50, -20)">
+      <rect x="-3" y="50" width="6" height="80" rx="3" fill="#fbbf24"/>
+      <ellipse cx="0" cy="45" rx="10" ry="15" fill="#fbbf24"/>
+    </g>
+  </g>
 </svg>
