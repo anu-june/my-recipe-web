@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Playfair_Display, Lato, Dancing_Script } from "next/font/google";
 import "./globals.css";
 
@@ -21,6 +21,16 @@ const dancingScript = Dancing_Script({
 export const metadata: Metadata = {
   title: "Recipe Collection",
   description: "Your personal recipe collection",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Recipe Collection",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#f59e0b",
 };
 
 export default function RootLayout({

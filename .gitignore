@@ -44,3 +44,8 @@ next-env.d.ts
 # backups
 *.sql
 *.dump
+
+# pwa
+**/sw.js
+**/workbox-*.js
+**/worker-*.js
