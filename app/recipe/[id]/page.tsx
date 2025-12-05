@@ -176,24 +176,44 @@ export default async function RecipePage({
                         </h2>
                         {recipe.ingredients ? (() => {
                             const lines = recipe.ingredients.trim().split('\n').filter(line => line.trim());
-                            const hasTableFormat = lines.some(line => / [-\u2013\u2014] /.test(line));
 
-                            if (hasTableFormat) {
+                            // Regex to detect quantity patterns at end of line
+                            // Matches: numbers, fractions, units (g, ml, cup, tsp, tbsp, oz, lb, etc.), or words like "Pinch", "to taste"
+                            const quantityPattern = /^(.+?)\s+((?:\d+\/\d+|\d+\.?\d*)\s*(?:g|kg|ml|l|L|cup|cups|tsp|tbsp|oz|lb|piece|pieces|cloves?|inch|cm|mm|nos?|small|medium|large|to taste|as needed|optional|handful|bunch|sprig|sprigs|pinch)?(?:\s*\/\s*(?:\d+\/\d+|\d+\.?\d*)\s*(?:g|kg|ml|l|L|cup|cups|tsp|tbsp|oz|lb)?)?|pinch|to taste|as needed|optional|a few|handful|bunch)$/i;
+
+                            // Check if we should use table format:
+                            // Either has " - " separator OR has detectable quantity patterns
+                            const hasDashFormat = lines.some(line => / [-\u2013\u2014] /.test(line));
+                            const hasQuantityFormat = lines.some(line => quantityPattern.test(line.trim()));
+
+                            if (hasDashFormat || hasQuantityFormat) {
                                 return (
                                     <table className="w-full text-sage-800 border-collapse table-fixed">
                                         <tbody>
                                             {lines.map((line, index) => {
-                                                const parts = line.split(/ [-\u2013\u2014] /);
-
-                                                let ingredient = parts[0];
+                                                const trimmedLine = line.trim();
+                                                let ingredient = trimmedLine;
                                                 let quantity = '';
 
-                                                if (parts.length > 1) {
-                                                    quantity = parts[parts.length - 1].trim();
-                                                    ingredient = parts.slice(0, parts.length - 1).join(' - ').trim();
+                                                // First, try dash separator (last occurrence)
+                                                const dashPattern = / [-\u2013\u2014] /g;
+                                                const dashMatches = [...trimmedLine.matchAll(dashPattern)];
+
+                                                if (dashMatches.length > 0) {
+                                                    const lastMatch = dashMatches[dashMatches.length - 1];
+                                                    const splitIndex = lastMatch.index!;
+                                                    ingredient = trimmedLine.substring(0, splitIndex).trim();
+                                                    quantity = trimmedLine.substring(splitIndex + lastMatch[0].length).trim();
+                                                } else {
+                                                    // Try to extract quantity from end of line using pattern
+                                                    const match = trimmedLine.match(quantityPattern);
+                                                    if (match) {
+                                                        ingredient = match[1].trim();
+                                                        quantity = match[2].trim();
+                                                    }
                                                 }
 
-                                                const isHeader = !quantity && ingredient.length > 0;
+                                                const isHeader = !quantity && ingredient.length > 0 && !quantityPattern.test(ingredient);
 
                                                 if (isHeader) {
                                                     return (
@@ -207,8 +227,7 @@ export default async function RecipePage({
 
                                                 return (
                                                     <tr key={index} className="align-baseline">
-                                                        <td className="py-2 border-b border-sage-100 font-medium pr-2 break-words" style={{ width: '55%' }}>{ingredient}</td>
-                                                        <td className="py-2 border-b border-sage-100 text-sage-400 px-1 text-center" style={{ width: '5%' }}>-</td>
+                                                        <td className="py-2 border-b border-sage-100 font-medium pr-2 break-words" style={{ width: '60%' }}>{ingredient}</td>
                                                         <td className="py-2 border-b border-sage-100 text-sage-700 text-right pl-2 break-words" style={{ width: '40%' }}>{quantity}</td>
                                                     </tr>
                                                 );
