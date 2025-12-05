@@ -50,12 +50,37 @@ function parseStepsTable(steps: string) {
         return null;
     }
 
+    // Patterns that indicate a section header (not a numbered step)
+    // Catches: "To make...", "To whip...", "To assemble", "For the...", etc.
+    // But NOT long sentences like "Serve warm or refrigerate for 2 hours..."
+    const headerPatterns = /^(to \w+|for the|for making|making the|prepare the|preparing|assembly|finishing|decoration|garnish|serve|serving|notes?:)/i;
+
+    // Headers are typically short titles (under 40 chars), not full sentences
+    const MAX_HEADER_LENGTH = 40;
+
     const rows = lines.map(line => {
         const trimmedLine = line.trim();
-        // Match patterns like "1. ", "1) ", "1: ", or just "1 "
+
+        // First, try to extract text after number prefix
         const match = trimmedLine.match(/^(\d+)[\.):\s]+(.+)$/);
+        const textContent = match ? match[2].trim() : trimmedLine;
+
+        // Check if this line is a section header:
+        // 1. Must match header pattern
+        // 2. Must be SHORT (headers are titles, not sentences)
+        const isShortEnough = textContent.length <= MAX_HEADER_LENGTH;
+        if (headerPatterns.test(textContent) && isShortEnough) {
+            return {
+                isHeader: true,
+                number: '',
+                instruction: textContent
+            };
+        }
+
+        // Regular numbered step
         if (match) {
             return {
+                isHeader: false,
                 number: match[1],
                 instruction: match[2].trim()
             };
@@ -258,16 +283,29 @@ export default async function RecipePage({
                             if (tableData) {
                                 return (
                                     <div className="space-y-8">
-                                        {tableData.map((row, index) => (
-                                            <div key={index} className="flex gap-6 group">
-                                                <div className="flex-shrink-0 font-serif text-4xl text-terracotta-300 group-hover:text-terracotta-400 transition-colors">
-                                                    {row.number}
+                                        {tableData.map((row, index) => {
+                                            // Render section headers differently
+                                            if (row.isHeader) {
+                                                return (
+                                                    <div key={index} className="pt-4 first:pt-0">
+                                                        <h3 className="text-xl font-bold text-sage-900 font-serif border-b border-sage-200 pb-2 mb-4">
+                                                            {row.instruction}
+                                                        </h3>
+                                                    </div>
+                                                );
+                                            }
+
+                                            return (
+                                                <div key={index} className="flex gap-6 group">
+                                                    <div className="flex-shrink-0 font-serif text-4xl text-terracotta-300 group-hover:text-terracotta-400 transition-colors">
+                                                        {row.number}
+                                                    </div>
+                                                    <div className="flex-1 text-sage-800 leading-relaxed pt-2 text-lg">
+                                                        {row.instruction}
+                                                    </div>
                                                 </div>
-                                                <div className="flex-1 text-sage-800 leading-relaxed pt-2 text-lg">
-                                                    {row.instruction}
-                                                </div>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 );
                             } else {
