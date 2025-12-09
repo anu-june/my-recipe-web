@@ -2,6 +2,7 @@ import Image from 'next/image';
 import { supabase } from '@/lib/supabaseClient';
 import RecipeList from './components/RecipeList';
 import ScrollAwareAddButton from './components/ScrollAwareAddButton';
+import UserMenu from './components/UserMenu';
 import type { RecipeListItem } from '@/lib/types';
 
 export const revalidate = 0; // Disable static caching to show new recipes immediately
@@ -18,6 +19,11 @@ export default async function Home() {
     <main className="min-h-screen bg-sage-50">
       {/* Scroll-Aware Add Recipe Button */}
       <ScrollAwareAddButton />
+
+      {/* Fixed User Menu */}
+      <div className="fixed top-6 left-6 z-20">
+        <UserMenu />
+      </div>
 
       {/* Hero Section with Background Image */}
       <div className="relative h-64 md:h-80 w-full overflow-hidden">

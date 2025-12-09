@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/app/context/AuthContext';
 
 export default function ScrollAwareAddButton() {
+    const { user, loading } = useAuth();
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
@@ -19,6 +21,11 @@ export default function ScrollAwareAddButton() {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    // Don't show if not logged in or still loading
+    if (loading || !user) {
+        return null;
+    }
+
     return (
         <Link
             href="/add-recipe"
@@ -29,3 +36,4 @@ export default function ScrollAwareAddButton() {
         </Link>
     );
 }
+

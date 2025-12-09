@@ -7,9 +7,10 @@ import { useRouter } from 'next/navigation';
 import { formatIngredients, formatSteps } from '@/lib/recipeFormatters';
 import { validateRecipe, ValidationErrors } from '@/lib/validation';
 import RecipeImporter from '../components/RecipeImporter';
+import RequireAuth from '../components/RequireAuth';
 import type { ParsedRecipe } from '@/lib/types';
 
-export default function AddRecipePage() {
+function AddRecipeContent() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -383,3 +384,12 @@ export default function AddRecipePage() {
         </main>
     );
 }
+
+export default function AddRecipePage() {
+    return (
+        <RequireAuth>
+            <AddRecipeContent />
+        </RequireAuth>
+    );
+}
+

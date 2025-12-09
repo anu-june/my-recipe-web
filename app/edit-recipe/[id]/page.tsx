@@ -7,10 +7,9 @@ import { useRouter } from 'next/navigation';
 import type { Recipe } from '@/lib/types';
 import { formatIngredients, formatSteps } from '@/lib/recipeFormatters';
 import { validateRecipe, ValidationErrors } from '@/lib/validation';
+import RequireAuth from '@/app/components/RequireAuth';
 
-
-
-export default function EditRecipePage({
+function EditRecipeContent({
     params,
 }: {
     params: Promise<{ id: string }>;
@@ -443,5 +442,17 @@ export default function EditRecipePage({
                 </div>
             </div>
         </main>
+    );
+}
+
+export default function EditRecipePage({
+    params,
+}: {
+    params: Promise<{ id: string }>;
+}) {
+    return (
+        <RequireAuth>
+            <EditRecipeContent params={params} />
+        </RequireAuth>
     );
 }

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Playfair_Display, Lato, Dancing_Script } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "./context/AuthContext";
 
 const playfair = Playfair_Display({
   variable: "--font-heading",
@@ -43,8 +44,11 @@ export default function RootLayout({
       <body
         className={`${playfair.variable} ${lato.variable} ${dancingScript.variable} antialiased bg-stone-50 text-stone-800`}
       >
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
 }
+
