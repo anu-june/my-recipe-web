@@ -15,6 +15,7 @@ export type Recipe = {
     notes: string | null;
     source_url: string | null;
     is_published: boolean;
+    user_id?: string;
     created_at?: string;
 };
 

@@ -26,7 +26,8 @@ export async function POST(request: NextRequest) {
 
         // Get Gemini model
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+        // Model selection is handled in generateWithFallback
+
 
         // Check if input is a URL
         let contentToParse = input;
@@ -297,10 +298,35 @@ RESPOND ONLY WITH VALID JSON in this exact format (no markdown, no extra text):
 }
 `;
 
-        // Call Gemini API
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
+        // Helper function to generate content with fallback
+        const generateWithFallback = async (prompt: string) => {
+            const models = ['gemini-2.0-flash', 'gemini-flash-latest'];
+            let lastError;
+
+            for (const modelName of models) {
+                try {
+                    console.log(`Attempting to generate with model: ${modelName}`);
+                    const model = genAI.getGenerativeModel({ model: modelName });
+                    const result = await model.generateContent(prompt);
+                    const response = await result.response;
+                    return response.text();
+                } catch (error: any) {
+                    console.warn(`Model ${modelName} failed:`, error.message);
+                    lastError = error;
+
+                    // If it's a quota error (429) or service unavailable (503), try next model
+                    // Otherwise, if it's a bad request (400), it might be the prompt, but we'll try next anyway just in case
+                    if (error.message.includes('429') || error.message.includes('503')) {
+                        continue;
+                    }
+                    // For other errors, we might want to break, but for robustness let's try the fallback
+                }
+            }
+            throw lastError;
+        };
+
+        // Call Gemini API with fallback
+        const text = await generateWithFallback(prompt);
 
         // Parse the JSON response
         let recipeData;
@@ -311,7 +337,7 @@ RESPOND ONLY WITH VALID JSON in this exact format (no markdown, no extra text):
         } catch (parseError) {
             console.error('Failed to parse AI response:', text);
             return NextResponse.json(
-                { error: 'Failed to parse recipe. Please try again or enter recipe manually.' },
+                { error: 'Failed to parse recipe JSON from AI response. Please try again.' },
                 { status: 500 }
             );
         }
@@ -323,10 +349,10 @@ RESPOND ONLY WITH VALID JSON in this exact format (no markdown, no extra text):
 
         return NextResponse.json({ recipe: recipeData });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error parsing recipe:', error);
         return NextResponse.json(
-            { error: 'Failed to parse recipe. Please try again.' },
+            { error: `Failed to parse recipe: ${error.message || 'Unknown error'}` },
             { status: 500 }
         );
     }

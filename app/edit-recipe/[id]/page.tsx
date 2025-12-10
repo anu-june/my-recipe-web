@@ -174,6 +174,29 @@ function EditRecipeContent({
         }
     };
 
+    const handleDelete = async () => {
+        if (!window.confirm('Are you sure you want to delete this recipe? This action cannot be undone.')) {
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const { error } = await supabase
+                .from('recipes')
+                .delete()
+                .eq('id', recipeId);
+
+            if (error) throw error;
+
+            // Redirect to home page after successful deletion
+            router.push('/');
+            router.refresh();
+        } catch (err: any) {
+            setError(err.message || 'Failed to delete recipe');
+            setLoading(false);
+        }
+    };
+
     if (fetching) {
         return (
             <main className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-amber-50">
@@ -422,8 +445,8 @@ function EditRecipeContent({
                             </label>
                         </div>
 
-                        {/* Submit Button */}
-                        <div className="flex gap-4">
+                        {/* Action Buttons */}
+                        <div className="flex flex-col md:flex-row gap-4 pt-4 border-t border-gray-100">
                             <button
                                 type="submit"
                                 disabled={loading}
@@ -431,12 +454,22 @@ function EditRecipeContent({
                             >
                                 {loading ? 'Updating Recipe...' : 'Update Recipe'}
                             </button>
+
                             <Link
                                 href={`/recipe/${recipeId}`}
                                 className="px-6 py-3 border-2 border-gray-300 rounded-lg font-semibold text-gray-700 hover:border-gray-400 transition-all text-center"
                             >
                                 Cancel
                             </Link>
+
+                            <button
+                                type="button"
+                                onClick={handleDelete}
+                                disabled={loading}
+                                className="px-6 py-3 border-2 border-red-200 text-red-600 rounded-lg font-semibold hover:bg-red-50 hover:border-red-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Delete Recipe
+                            </button>
                         </div>
                     </form>
                 </div>
