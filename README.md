@@ -5,8 +5,8 @@ A modern, elegant recipe management application built with Next.js, featuring AI
 ## 🌟 Features
 
 ### Core Functionality
-- **Recipe Management**: Create, edit, view, and organize your personal recipe collection
-- **AI Recipe Import**: Import recipes from any URL or raw text using Google Gemini 2.0
+- **Recipe Management**: Create, edit, delete, view, and organize your personal recipe collection
+- **AI Recipe Import**: Import recipes from any URL, YouTube video (via transcript), or raw text using Google Gemini 2.0 with smart fallback
 - **Smart Organization**: Recipes automatically grouped by category and sorted alphabetically
 - **Search**: Quick search across recipe titles and categories
 - **Progressive Web App (PWA)**: Install on mobile/desktop, works offline, fast caching
@@ -14,6 +14,7 @@ A modern, elegant recipe management application built with Next.js, featuring AI
 
 ### AI-Powered Import
 - Parse recipes from any website URL
+- **YouTube Support**: Extracts recipes from video descriptions AND transcripts (captions)
 - Extract from raw text, notes, or transcripts
 - JSON-LD structured data extraction for accuracy
 - Automatic formatting to consistent template
@@ -31,7 +32,7 @@ A modern, elegant recipe management application built with Next.js, featuring AI
 
 **Backend**
 - **Database**: Supabase (PostgreSQL)
-- **AI**: Google Gemini 2.0 Flash
+- **AI**: Google Gemini 2.0 Flash (with auto-fallback to Flash Latest)
 - **PWA**: @ducanh2912/next-pwa with Workbox
 - **Deployment**: Vercel
 
@@ -77,6 +78,7 @@ recipe-web/
 | Column | Type | Description |
 |--------|------|-------------|
 | `id` | uuid | Primary key |
+| `user_id` | uuid | Owner ID (references auth.users) |
 | `title` | text | Recipe name |
 | `slug` | text | URL-friendly identifier |
 | `category` | text | Recipe category (Dessert, Main, etc.) |
@@ -103,12 +105,13 @@ recipe-web/
 
 2. **Content Extraction**
    - **For URLs**: Fetches HTML with browser-like headers
-   - **For YouTube**: Detects video URL, extracts full description from `ytInitialData` (embedded JSON), and parses recipe from video description
+   - **For YouTube**: Fetches video description AND transcript (captions) using `youtube-transcript` to "listen" to the recipe
    - **JSON-LD Priority**: Searches for `application/ld+json` schema
    - **Fallback**: Strips HTML tags and extracts text content
 
 3. **AI Parsing**
    - Sends content to Gemini 2.0 Flash
+   - **Smart Fallback**: If 2.0 hits a rate limit (429), automatically retries with `gemini-flash-latest`
    - Uses strict prompt with formatting rules
    - Returns structured JSON with recipe data
 
@@ -206,9 +209,22 @@ create table recipes (
 -- Enable Row Level Security
 alter table recipes enable row level security;
 
--- Create policies (adjust as needed)
-create policy "Allow all operations" on recipes for all using (true);
+-- Create policies
+-- 1. Allow public read access
+create policy "Public recipes are viewable by everyone" on recipes for select using (true);
+
+-- 2. Allow authenticated users to insert their own recipes
+create policy "Users can insert their own recipes" on recipes for insert with check (auth.uid() = user_id);
+
+-- 3. Allow users to update/delete only their own recipes
+create policy "Users can update own recipes" on recipes for update using (auth.uid() = user_id);
+create policy "Users can delete own recipes" on recipes for delete using (auth.uid() = user_id);
 ```
+
+### Security Features
+- **Row Level Security (RLS)**: Enforced on the database level.
+- **User Ownership**: Recipes are linked to `auth.users`.
+- **Protected Actions**: Only the owner can edit or delete their recipes.
 
 ## � Progressive Web App (PWA)
 
