@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { YoutubeTranscript } from 'youtube-transcript';
 
 
 
@@ -96,13 +97,27 @@ export async function POST(request: NextRequest) {
                             console.log('Using meta description as fallback, length:', fullDescription.length);
                         }
 
-                        if (fullDescription) {
-                            console.log('Extracted YouTube description, length:', fullDescription.length);
-                            contentToParse = `Video Title: ${title}\n\nDescription:\n${fullDescription}`;
+                        // Try to fetch transcript
+                        let transcriptText = '';
+                        try {
+                            console.log('Fetching transcript for video:', videoId);
+                            const transcript = await YoutubeTranscript.fetchTranscript(videoId);
+                            if (transcript && transcript.length > 0) {
+                                transcriptText = transcript.map(t => t.text).join(' ');
+                                console.log('Fetched transcript, length:', transcriptText.length);
+                            }
+                        } catch (transcriptError) {
+                            console.warn('Failed to fetch transcript:', transcriptError);
+                            // Continue without transcript
+                        }
+
+                        if (fullDescription || transcriptText) {
+                            console.log('Extracted YouTube content. Description length:', fullDescription.length, 'Transcript length:', transcriptText.length);
+                            contentToParse = `Video Title: ${title}\n\nDescription:\n${fullDescription}\n\nTranscript:\n${transcriptText}`;
                         } else {
-                            console.warn('No description found in YouTube video');
+                            console.warn('No description or transcript found in YouTube video');
                             return NextResponse.json(
-                                { error: 'Could not retrieve video description. Please paste the recipe manually.' },
+                                { error: 'Could not retrieve video description or transcript. Please paste the recipe manually.' },
                                 { status: 422 }
                             );
                         }
