@@ -25,7 +25,7 @@ A modern, elegant recipe management application built with Next.js, featuring AI
 ### Tech Stack
 
 **Frontend**
-- **Framework**: Next.js 16 (App Router)
+- **Framework**: Next.js 15 (App Router)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS v4
 - **Fonts**: Playfair Display (serif), Lato (sans-serif), Dancing Script (handwriting)
@@ -189,6 +189,7 @@ Run this SQL in your Supabase SQL editor:
 ```sql
 create table recipes (
   id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users(id),
   title text not null,
   slug text unique not null,
   category text,
@@ -226,7 +227,7 @@ create policy "Users can delete own recipes" on recipes for delete using (auth.u
 - **User Ownership**: Recipes are linked to `auth.users`.
 - **Protected Actions**: Only the owner can edit or delete their recipes.
 
-## � Progressive Web App (PWA)
+## 📱 Progressive Web App (PWA)
 
 ### Installation
 
@@ -253,7 +254,7 @@ create policy "Users can delete own recipes" on recipes for delete using (auth.u
 - PWA not active in development (`npm run dev`)
 - Icons: SVG with PNG fallbacks for compatibility
 
-## �📦 Deployment
+## 📦 Deployment
 
 ### Vercel Deployment
 
