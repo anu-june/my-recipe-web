@@ -15,14 +15,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install PostgreSQL Client
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql-common
-          # Install the specific version repository script
-          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
-          sudo apt-get install -y postgresql-client-17
-
       - name: Create Database Backup
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
@@ -31,11 +23,9 @@ jobs:
           TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
           FILENAME="backup_${TIMESTAMP}.sql"
           
-          # Run pg_dump
-          # -Fc: Custom format (compressed)
-          # -d: Database URL
-          # Use explicit path to ensure v17 is used
-          /usr/lib/postgresql/17/bin/pg_dump -d "$SUPABASE_DB_URL" -f "$FILENAME"
+          # Run pg_dump using Docker to guarantee v17 client
+          # This avoids any version mismatch with the runner's default packages
+          docker run --rm -v $(pwd):/backup postgres:17-alpine pg_dump -d "$SUPABASE_DB_URL" -f /backup/$FILENAME
           
           echo "BACKUP_FILENAME=$FILENAME" >> $GITHUB_ENV
 
