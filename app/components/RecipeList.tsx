@@ -67,6 +67,7 @@ export default function RecipeList({ initialRecipes }: { initialRecipes: RecipeL
                 <input
                     type="text"
                     placeholder="Search your collection..."
+                    aria-label="Search recipes"
                     className="block w-full pl-10 pr-4 py-3 border-b border-sage-300 bg-transparent text-sage-900 placeholder-sage-400 focus:outline-none focus:border-sage-800 transition-colors font-light"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}

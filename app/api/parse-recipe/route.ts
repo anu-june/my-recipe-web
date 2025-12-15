@@ -41,7 +41,6 @@ export async function POST(request: NextRequest) {
 
             if (youtubeMatch && youtubeMatch[1]) {
                 const videoId = youtubeMatch[1];
-                console.log('Detected YouTube video:', videoId);
 
                 try {
                     // Fetch YouTube page to extract description from meta tags
@@ -84,9 +83,8 @@ export async function POST(request: NextRequest) {
                                     }
                                 }
 
-                                console.log('Extracted YouTube description from ytInitialData, length:', fullDescription.length);
                             } catch (parseError) {
-                                console.warn('Failed to parse ytInitialData:', parseError);
+                                // Silent failure for optional data
                             }
                         }
 
@@ -94,17 +92,14 @@ export async function POST(request: NextRequest) {
                         if (!fullDescription) {
                             const metaDescMatch = html.match(/<meta property="og:description" content="([^"]+)"/);
                             fullDescription = metaDescMatch ? metaDescMatch[1] : '';
-                            console.log('Using meta description as fallback, length:', fullDescription.length);
                         }
 
                         // Try to fetch transcript
                         let transcriptText = '';
                         try {
-                            console.log('Fetching transcript for video:', videoId);
                             const transcript = await YoutubeTranscript.fetchTranscript(videoId);
                             if (transcript && transcript.length > 0) {
                                 transcriptText = transcript.map(t => t.text).join(' ');
-                                console.log('Fetched transcript, length:', transcriptText.length);
                             }
                         } catch (transcriptError) {
                             console.warn('Failed to fetch transcript:', transcriptError);
@@ -112,7 +107,6 @@ export async function POST(request: NextRequest) {
                         }
 
                         if (fullDescription || transcriptText) {
-                            console.log('Extracted YouTube content. Description length:', fullDescription.length, 'Transcript length:', transcriptText.length);
                             contentToParse = `Video Title: ${title}\n\nDescription:\n${fullDescription}\n\nTranscript:\n${transcriptText}`;
                         } else {
                             console.warn('No description or transcript found in YouTube video');
@@ -138,7 +132,6 @@ export async function POST(request: NextRequest) {
             } else {
                 // Regular URL (not YouTube)
                 try {
-                    console.log('Fetching URL:', input);
                     const response = await fetch(input, {
                         headers: {
                             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -160,7 +153,6 @@ export async function POST(request: NextRequest) {
 
                     if (response.ok) {
                         const html = await response.text();
-                        console.log('Successfully fetched URL, length:', html.length);
 
                         // Try to extract JSON-LD first (most reliable for recipes)
                         const jsonLdMatch = html.match(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/i);
@@ -195,11 +187,9 @@ export async function POST(request: NextRequest) {
                                 recipeObject = findRecipe(jsonLd);
 
                                 if (recipeObject) {
-                                    console.log('Found JSON-LD Recipe object!');
                                     // Use the structured data as the input for Gemini to normalize
                                     contentToParse = JSON.stringify(recipeObject);
                                 } else {
-                                    console.log('JSON-LD found but no Recipe object detected, falling back to HTML text');
                                     // Fallback to HTML text cleaning
                                     contentToParse = html
                                         .replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gm, '')
@@ -269,7 +259,8 @@ INSTRUCTIONS:
 
 FORMATTING RULES:
 
-- Standardize units: PREFER cups, tbsp, tsp for liquids. Use grams for solids when metric.
+- Units: PRESERVE DUAL UNITS if provided (e.g. "1 cup (120g)"). Do not remove the metric/gram equivalent if the cup measurement exists.
+- In STEPS: ALWAYS prefer volume units (cups, tbsp) for readability.
 - Convert mL to cups (240 mL = 1 cup, 120 mL = 1/2 cup, 60 mL = 1/4 cup, etc.).
 - List ALL ingredients in a single flat list.
 - EXCEPTION: If there are marination ingredients, list "Marination" as a header line, then list marination ingredients below it. Otherwise, NO headers like "For the sauce" or "A/B/C".
@@ -320,7 +311,6 @@ RESPOND ONLY WITH VALID JSON in this exact format (no markdown, no extra text):
 
             for (const modelName of models) {
                 try {
-                    console.log(`Attempting to generate with model: ${modelName}`);
                     const model = genAI.getGenerativeModel({ model: modelName });
                     const result = await model.generateContent(prompt);
                     const response = await result.response;

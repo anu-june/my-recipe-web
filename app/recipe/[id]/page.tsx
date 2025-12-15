@@ -2,21 +2,9 @@
 import { supabase } from '@/lib/supabaseClient';
 import Link from 'next/link';
 import AuthProtectedEditButton from '@/app/components/AuthProtectedEditButton';
+import type { Recipe } from '@/lib/types';
 
-type Recipe = {
-    id: string;
-    title: string;
-    category: string;
-    cuisine: string | null;
-    servings: string | null;
-    prep_time_minutes: number | null;
-    cook_time_minutes: number | null;
-    total_time_minutes: number | null;
-    ingredients: string;
-    steps: string;
-    notes: string | null;
-    source_url: string | null;
-};
+
 
 // Helper function to parse ingredients into table format
 function parseIngredientsTable(ingredients: string) {

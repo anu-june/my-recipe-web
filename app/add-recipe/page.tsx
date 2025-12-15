@@ -129,7 +129,6 @@ function AddRecipeContent() {
                     steps: formattedSteps,
                     notes: formData.notes || null,
                     source_url: formData.source_url || null,
-                    source_url: formData.source_url || null,
                     is_published: formData.is_published,
                     user_id: user?.id
                 }])

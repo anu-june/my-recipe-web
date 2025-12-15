@@ -297,7 +297,6 @@ npm run build  # Uses --webpack flag for PWA compatibility
 **`lib/types.ts`**: TypeScript interfaces  
 **`lib/recipeFormatters.ts`**: Ingredient/step formatting  
 **`lib/validation.ts`**: Form validation logic
-**`lib/validation.ts`**: Form validation logic
 
 ### Maintenance Scripts
 
