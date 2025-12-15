@@ -297,7 +297,25 @@ npm run build  # Uses --webpack flag for PWA compatibility
 **`lib/types.ts`**: TypeScript interfaces  
 **`lib/recipeFormatters.ts`**: Ingredient/step formatting  
 **`lib/validation.ts`**: Form validation logic
+**`lib/validation.ts`**: Form validation logic
 
+### Maintenance Scripts
+
+**`scripts/`**: Contains utility scripts for database maintenance.
+- `fix-recipe-owners.ts`: Migration script to assign ownership of legacy recipes.
+- `debug-recipes.ts`: Utility to fetch and debug recipe data.
+
+Run scripts using `tsx`:
+```bash
+npx tsx scripts/your-script.ts
+```
+
+### CI/CD Pipelines
+
+**Database Backup**:
+- Automatically runs monthly (cron: `0 0 1 * *`) via GitHub Actions.
+- Uses `pg_dump` (Dockerized v17) to backup the Supabase database.
+- Artifacts are retained for 90 days.
 ### Performance Optimizations
 - `useMemo` for filtering and grouping
 - Dynamic rendering (`revalidate = 0`)

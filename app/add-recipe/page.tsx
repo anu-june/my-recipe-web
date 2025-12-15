@@ -8,10 +8,12 @@ import { formatIngredients, formatSteps } from '@/lib/recipeFormatters';
 import { validateRecipe, ValidationErrors } from '@/lib/validation';
 import RecipeImporter from '../components/RecipeImporter';
 import RequireAuth from '../components/RequireAuth';
+import { useAuth } from '@/app/context/AuthContext';
 import type { ParsedRecipe } from '@/lib/types';
 
 function AddRecipeContent() {
     const router = useRouter();
+    const { user } = useAuth();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
@@ -127,7 +129,9 @@ function AddRecipeContent() {
                     steps: formattedSteps,
                     notes: formData.notes || null,
                     source_url: formData.source_url || null,
-                    is_published: formData.is_published
+                    source_url: formData.source_url || null,
+                    is_published: formData.is_published,
+                    user_id: user?.id
                 }])
                 .select();
 
