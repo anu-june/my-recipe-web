@@ -34,7 +34,8 @@ jobs:
           # Run pg_dump
           # -Fc: Custom format (compressed)
           # -d: Database URL
-          pg_dump -d "$SUPABASE_DB_URL" -f "$FILENAME"
+          # Use explicit path to ensure v17 is used
+          /usr/lib/postgresql/17/bin/pg_dump -d "$SUPABASE_DB_URL" -f "$FILENAME"
           
           echo "BACKUP_FILENAME=$FILENAME" >> $GITHUB_ENV
 
