@@ -18,7 +18,10 @@ jobs:
       - name: Install PostgreSQL Client
         run: |
           sudo apt-get update
-          sudo apt-get install -y postgresql-client
+          sudo apt-get install -y postgresql-common
+          # Install the specific version repository script
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y postgresql-client-17
 
       - name: Create Database Backup
         env:
