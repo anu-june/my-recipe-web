@@ -414,19 +414,19 @@ function EditRecipeContent({
                             />
                         </div>
 
-                        {/* Source URL */}
+                        {/* Source */}
                         <div>
                             <label htmlFor="source_url" className="block text-sm font-semibold text-gray-700 mb-2">
-                                Source URL
+                                Source <span className="text-xs font-normal text-gray-500">(URL or text, e.g. "Mom's Kitchen")</span>
                             </label>
                             <input
-                                type="url"
+                                type="text"
                                 id="source_url"
                                 name="source_url"
                                 value={formData.source_url}
                                 onChange={handleChange}
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                                placeholder="https://example.com/recipe"
+                                placeholder="https://example.com/recipe or Mom's Kitchen"
                             />
                         </div>
 

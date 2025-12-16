@@ -320,14 +320,20 @@ export default async function RecipePage({
                 {recipe.source_url && (
                     <section className="mt-8">
                         <p className="text-sage-400 text-sm">
-                            Source: <a
-                                href={recipe.source_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-terracotta-500 hover:text-terracotta-700 underline transition-colors"
-                            >
-                                {recipe.source_url}
-                            </a>
+                            Source: {recipe.source_url.match(/^https?:\/\//) ? (
+                                <a
+                                    href={recipe.source_url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-terracotta-500 hover:text-terracotta-700 underline transition-colors"
+                                >
+                                    {recipe.source_url}
+                                </a>
+                            ) : (
+                                <span className="text-sage-600 font-medium">
+                                    {recipe.source_url}
+                                </span>
+                            )}
                         </p>
                     </section>
                 )}

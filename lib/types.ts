@@ -13,6 +13,7 @@ export type Recipe = {
     ingredients: string;
     steps: string;
     notes: string | null;
+    /** Source of the recipe (URL or text like "Mom's Recipe") */
     source_url: string | null;
     is_published: boolean;
     user_id?: string;
