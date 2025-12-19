@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { supabase } from '@/lib/supabaseClient';
 
 export async function parseRecipeWithGemini(contentToParse: string, apiKey: string): Promise<any> {
     const genAI = new GoogleGenerativeAI(apiKey);
@@ -12,7 +13,9 @@ ${contentToParse}
 INSTRUCTIONS:
 1. If it's a URL, imagine you're reading the recipe content from that page.
 2. Extract and structure the recipe information into a consistent template.
-3. STRICTLY use only the information provided in the input. DO NOT hallucinate or invent ingredients or steps. If the input does not contain a recipe, return a JSON with an "error" field explaining why.
+3. STRICTLY use only the information provided in the input. DO NOT hallucinate or invent ingredients or steps. 
+4. If the input contains ONLY ingredients but no steps/instructions, still return the recipe with the ingredients list, set steps to "Steps not available - please watch the video or add manually", and add a note explaining this.
+5. If the input does not contain ANY recipe information at all (no title, no ingredients), return a JSON with an "error" field explaining why.
 
 FORMATTING RULES:
 
@@ -63,22 +66,59 @@ RESPOND ONLY WITH VALID JSON in this exact format (no markdown, no extra text):
 `;
 
     const generateWithFallback = async (prompt: string) => {
-        const models = ['gemini-2.0-flash', 'gemini-flash-latest'];
+        const models = ['gemini-3-flash-preview', 'gemini-2.5-flash', 'gemini-2.0-flash'];
         let lastError;
 
-        for (const modelName of models) {
+        for (const [index, modelName] of models.entries()) {
+            const startTime = Date.now();
+            let isSuccess = false;
+            let errorMsg = null;
+
             try {
                 const model = genAI.getGenerativeModel({ model: modelName });
                 const result = await model.generateContent(prompt);
                 const response = await result.response;
-                return response.text();
+                const text = response.text();
+                isSuccess = true;
+                return text;
             } catch (error: any) {
                 console.warn(`Model ${modelName} failed:`, error.message);
                 lastError = error;
+                errorMsg = error.message;
 
                 if (error.message.includes('429') || error.message.includes('503')) {
-                    continue;
+                    // Continue to next model on recoverable errors
+                } else {
+                    // Rethrow if it's not a rate limit error? 
+                    // Actually original logic continued for 429/503 but threw for others?
+                    // Original logic: if 429/503 continue, else loop finishes and throws lastError.
+                    // Wait, original logic ONLY continued if 429/503. It didn't break for others, it just retried loop? 
+                    // No, "if (error...includes...) continue;" implied it moves to next iteration.
+                    // If NOT 429/503, it falls through to end of loop block? No, it's inside the loop.
+                    // If it doesn't continue, it proceeds to end of loop body?
+                    // Ah, the original code had:
+                    // if (error...429/503) { continue; }
+                    // It had no "else break" so it would effectively continue for ALL errors unless it rethrew.
+                    // Let's re-read original.
+                    // It CAUGHT all errors, logged, assigned lastError.
+                    // Then `if (429/503) continue`. 
+                    // Then loop ends naturally? Yes. So it actually tried ALL models for ANY error.
+                    // My logging logic shouldn't change that behavior.
                 }
+            } finally {
+                // Log event to Supabase
+                const duration = Date.now() - startTime;
+                // Fire and forget logging
+                supabase.from('model_events').insert({
+                    model_name: modelName,
+                    status: isSuccess ? 'success' : 'failure',
+                    duration_ms: duration,
+                    error_message: errorMsg,
+                    fallback_occurred: index > 0, // 0 is primary, >0 is fallback
+                    recipe_source: contentToParse.substring(0, 100) // Log first 100 chars of source/URL
+                }).then(({ error }) => {
+                    if (error) console.error('Failed to log model event:', error);
+                });
             }
         }
         throw lastError;

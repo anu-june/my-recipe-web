@@ -28,11 +28,16 @@ async function listModels() {
 
         if (data.models) {
             console.log('Available Models:');
-            data.models.forEach((m: any) => {
-                if (m.supportedGenerationMethods?.includes('generateContent')) {
-                    console.log(`- ${m.name.replace('models/', '')} (${m.displayName})`);
-                }
-            });
+            const models = data.models
+                .filter((m: any) => m.supportedGenerationMethods?.includes('generateContent'))
+                .map((m: any) => ({
+                    name: m.name.replace('models/', ''),
+                    displayName: m.displayName
+                }));
+
+            const fs = require('fs');
+            fs.writeFileSync('available_models.json', JSON.stringify(models, null, 2));
+            console.log('Models written to available_models.json');
         } else {
             console.error('No models found or error:', data);
         }

@@ -11,18 +11,54 @@ export async function extractYoutubeData(url: string): Promise<string | null> {
     const videoId = youtubeMatch[1];
 
     try {
-        // Fetch YouTube page to extract description from meta tags
-        const ytResponse = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Accept-Language': 'en-US,en;q=0.9',
-            },
-            signal: AbortSignal.timeout(10000)
-        });
+        // Fetch YouTube page with retry logic for transient errors
+        let ytResponse: Response | null = null;
+        let lastError: Error | null = null;
+        const maxRetries = 3;
 
-        if (!ytResponse.ok) {
-            throw new Error('Failed to fetch YouTube page');
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                ytResponse = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                        'Accept-Language': 'en-US,en;q=0.9',
+                    },
+                    signal: AbortSignal.timeout(30000)
+                });
+
+                if (ytResponse.ok) {
+                    break; // Success, exit retry loop
+                }
+
+                // Log the failure
+                console.warn(`YouTube fetch attempt ${attempt}/${maxRetries} failed with status ${ytResponse.status}`);
+                lastError = new Error(`Failed to fetch YouTube page (status: ${ytResponse.status})`);
+
+                // Retry on 5xx errors (server errors)
+                if (ytResponse.status >= 500 && attempt < maxRetries) {
+                    const delay = Math.pow(2, attempt) * 1000; // 2s, 4s exponential backoff
+                    console.log(`Retrying in ${delay}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    continue;
+                }
+
+            } catch (fetchError: any) {
+                console.warn(`YouTube fetch attempt ${attempt}/${maxRetries} threw error:`, fetchError.message);
+                lastError = fetchError;
+
+                if (attempt < maxRetries) {
+                    const delay = Math.pow(2, attempt) * 1000;
+                    console.log(`Retrying in ${delay}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    continue;
+                }
+            }
+        }
+
+        if (!ytResponse || !ytResponse.ok) {
+            console.error(`YouTube fetch failed after ${maxRetries} attempts`);
+            throw lastError || new Error('Failed to fetch YouTube page after retries');
         }
 
         const html = await ytResponse.text();
