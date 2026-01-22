@@ -6,7 +6,7 @@ A modern, elegant recipe management application built with Next.js, featuring AI
 
 ### Core Functionality
 - **Recipe Management**: Create, edit, delete, view, and organize your personal recipe collection
-- **AI Recipe Import**: Import recipes from any URL, YouTube video (via transcript), or raw text using Google Gemini 2.0 with smart fallback
+- **AI Recipe Import**: Import recipes from any URL, YouTube video (via transcript), or raw text using Google Gemini 3 Flash with smart fallback
 - **Smart Organization**: Recipes automatically grouped by category and sorted alphabetically
 - **Search**: Quick search across recipe titles and categories
 - **Progressive Web App (PWA)**: Install on mobile/desktop, works offline, fast caching
@@ -32,7 +32,7 @@ A modern, elegant recipe management application built with Next.js, featuring AI
 
 **Backend**
 - **Database**: Supabase (PostgreSQL)
-- **AI**: Google Gemini 2.0 Flash (with auto-fallback to Flash Latest)
+- **AI**: Google Gemini 3 Flash (with auto-fallback to 2.5 Flash → 2.0 Flash)
 - **PWA**: @ducanh2912/next-pwa with Workbox
 - **Deployment**: Vercel
 
@@ -110,8 +110,8 @@ recipe-web/
    - **Fallback**: Strips HTML tags and extracts text content
 
 3. **AI Parsing**
-   - Sends content to Gemini 2.0 Flash
-   - **Smart Fallback**: If 2.0 hits a rate limit (429), automatically retries with `gemini-flash-latest`
+   - Sends content to Gemini 3 Flash (`gemini-3-flash-preview`)
+   - **Smart Fallback**: If primary model hits rate limit (429), automatically retries with `gemini-2.5-flash` → `gemini-2.0-flash`
    - Uses strict prompt with formatting rules
    - Returns structured JSON with recipe data
 
