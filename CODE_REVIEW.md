@@ -10,10 +10,10 @@ A review of the current recipe application codebase, focusing on the new AI impo
 - **Issue**: `process.env.GEMINI_API_KEY!` uses a non-null assertion. If the key is missing in production, the server will crash with a runtime error when the route is hit.
 - **Fix**: Add a check at the start of the route or in a config file to validate environment variables.
 
-### 2. Type Safety
+### 2. ~~Type Safety~~ ✅ RESOLVED
 - **File**: `app/add-recipe/page.tsx`
-- **Issue**: `handleRecipeParsed` uses `recipe: any`. This bypasses TypeScript's safety.
-- **Fix**: Import and use the `ParsedRecipe` type from `RecipeImporter.tsx` (or move it to `lib/types.ts`).
+- ~~**Issue**: `handleRecipeParsed` uses `recipe: any`. This bypasses TypeScript's safety.~~
+- **Status**: Fixed. Now uses `ParsedRecipe` type from `lib/types.ts`.
 
 ## ⚡ Performance & Caching
 
