@@ -111,7 +111,7 @@ recipe-web/
 
 3. **AI Parsing**
    - Sends content to Gemini 3 Flash (`gemini-3-flash-preview`)
-   - **Smart Fallback**: If primary model hits rate limit (429), automatically retries with `gemini-2.5-flash` → `gemini-2.0-flash`
+   - **Smart Fallback**: If primary model hits rate limit (429), automatically retries with `gemini-2.5-flash`
    - Uses strict prompt with formatting rules
    - Returns structured JSON with recipe data
 

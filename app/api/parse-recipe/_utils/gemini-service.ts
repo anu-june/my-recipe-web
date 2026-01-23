@@ -66,7 +66,7 @@ RESPOND ONLY WITH VALID JSON in this exact format (no markdown, no extra text):
 `;
 
     const generateWithFallback = async (prompt: string) => {
-        const models = ['gemini-3-flash-preview', 'gemini-2.5-flash', 'gemini-2.0-flash'];
+        const models = ['gemini-3-flash-preview', 'gemini-2.5-flash'];
         let lastError;
 
         for (const [index, modelName] of models.entries()) {

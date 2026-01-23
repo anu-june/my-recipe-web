@@ -1,0 +1,20 @@
+{
+  "input": "https://www.youtube.com/watch?v=usZvYCHmMD4",
+  "timestamp": "2025-12-19T13:41:55.946Z",
+  "status": 200,
+  "data": {
+    "recipe": {
+      "title": "Ghee Rice | Neychoru (Malabar Style)",
+      "category": "Main",
+      "cuisine": "Malabar",
+      "servings": "5 servings",
+      "prep_time_minutes": 15,
+      "cook_time_minutes": 20,
+      "ingredients": "Kaima Rice (Jeerakasala Rice) – 3 Cups (600 gm)\nGhee – 4+1 Tablespoons\nCardamom – 4 Nos\nCloves – 6 Nos\nCinnamon Stick – 3 Inch Piece\nMace – a little\nOnion – 2 Nos (Small Size) (200 gm)\nWater – 4½ Cup\nLime Juice – 1 Teaspoon\nSalt – ¼ + 1¾ Teaspoon\nRefined Oil – 4 Tablespoons\nCashew Nut – 2 Tablespoons\nRaisins – 1½ Tablespoon\nSugar – ½ Teaspoon",
+      "steps": "Steps not available - please watch the video or add manually",
+      "source_url": "https://www.tastycircle.com/",
+      "notes": "The provided input did not include step-by-step instructions. Mace is optional. This dish is traditionally prepared with Kaima Rice and is ideally served with veg or non-veg gravy type curries.",
+      "total_time_minutes": 35
+    }
+  }
+}

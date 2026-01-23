@@ -43,6 +43,7 @@ next-env.d.ts
 
 # backups
 *.sql
+!supabase/migrations/*.sql
 *.dump
 
 # pwa
