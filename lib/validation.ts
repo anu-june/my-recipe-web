@@ -55,7 +55,7 @@ export function validateRecipe(formData: {
         errors.cook_time_minutes = 'Cook time must be a positive number';
     }
 
-    // URL validation
+    // Cuisine validation
     if (formData.cuisine && formData.cuisine.trim().length > 0 && formData.cuisine.trim().length < 2) {
         errors.cuisine = 'Cuisine must be at least 2 characters';
     }

@@ -25,14 +25,14 @@ A modern, elegant recipe management application built with Next.js, featuring AI
 ### Tech Stack
 
 **Frontend**
-- **Framework**: Next.js 15 (App Router)
+- **Framework**: Next.js 16 (App Router)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS v4
 - **Fonts**: Playfair Display (serif), Lato (sans-serif), Dancing Script (handwriting)
 
 **Backend**
 - **Database**: Supabase (PostgreSQL)
-- **AI**: Google Gemini 3 Flash (with auto-fallback to 2.5 Flash → 2.0 Flash)
+- **AI**: Google Gemini 3 Flash (with auto-fallback to 2.5 Flash)
 - **PWA**: @ducanh2912/next-pwa with Workbox
 - **Deployment**: Vercel
 
@@ -43,31 +43,46 @@ recipe-web/
 ├── app/
 │   ├── api/
 │   │   └── parse-recipe/
-│   │       └── route.ts          # AI recipe parsing endpoint
+│   │       ├── route.ts              # AI recipe parsing endpoint
+│   │       └── _utils/
+│   │           ├── gemini-service.ts  # Gemini AI parsing with fallback
+│   │           ├── youtube-service.ts # YouTube data extraction
+│   │           └── web-service.ts     # Web page data extraction
+│   ├── auth/
+│   │   └── callback/
+│   │       └── route.ts              # OAuth callback handler
 │   ├── components/
-│   │   ├── RecipeList.tsx        # Recipe grid with search & grouping
-│   │   ├── RecipeImporter.tsx    # AI import UI component
-│   │   └── ScrollAwareAddButton.tsx  # Floating action button
+│   │   ├── AuthProtectedEditButton.tsx  # Auth-guarded edit button
+│   │   ├── RecipeImporter.tsx           # AI import UI component
+│   │   ├── RecipeList.tsx               # Recipe grid with search & grouping
+│   │   ├── RequireAuth.tsx              # Auth wrapper component
+│   │   ├── ScrollAwareAddButton.tsx     # Floating action button
+│   │   └── UserMenu.tsx                 # User login/logout menu
+│   ├── context/
+│   │   └── AuthContext.tsx           # Auth context provider
+│   ├── login/
+│   │   └── page.tsx                  # Login page
 │   ├── recipe/[id]/
-│   │   └── page.tsx              # Recipe detail view
+│   │   └── page.tsx                  # Recipe detail view
 │   ├── add-recipe/
-│   │   └── page.tsx              # Add recipe form
+│   │   └── page.tsx                  # Add recipe form
 │   ├── edit-recipe/[id]/
-│   │   └── page.tsx              # Edit recipe form
-│   ├── page.tsx                  # Landing page
-│   ├── layout.tsx                # Root layout
-│   └── globals.css               # Global styles & Tailwind config
+│   │   └── page.tsx                  # Edit recipe form
+│   ├── page.tsx                      # Landing page
+│   ├── layout.tsx                    # Root layout
+│   └── globals.css                   # Global styles & Tailwind config
 ├── lib/
-│   ├── supabaseClient.ts         # Supabase configuration
-│   ├── types.ts                  # Shared TypeScript types
-│   ├── recipeFormatters.ts       # Ingredient/step formatters
-│   └── validation.ts             # Form validation utilities
+│   ├── supabaseClient.ts             # Supabase configuration
+│   ├── types.ts                      # Shared TypeScript types
+│   ├── recipeFormatters.ts           # Ingredient/step formatters
+│   └── validation.ts                 # Form validation utilities
+├── scripts/                          # Utility & debug scripts (run with npx tsx)
 └── public/
-    ├── header-bg.png             # Hero section background
-    ├── icon.svg                  # PWA app icon (SVG)
-    ├── icon-192.png              # PWA icon 192x192
-    ├── icon-512.png              # PWA icon 512x512
-    └── manifest.json             # PWA manifest
+    ├── header-bg.png                 # Hero section background
+    ├── icon.svg                      # PWA app icon (SVG)
+    ├── icon-192.png                  # PWA icon 192x192
+    ├── icon-512.png                  # PWA icon 512x512
+    └── manifest.json                 # PWA manifest
 
 ```
 
@@ -95,6 +110,21 @@ recipe-web/
 | `created_at` | timestamp | Creation timestamp |
 | `updated_at` | timestamp | Last update timestamp |
 
+### `model_events` Table
+
+Logs AI model usage for observability and fallback tracking.
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | uuid | Primary key |
+| `model_name` | text | Model used (e.g., `gemini-3-flash-preview`) |
+| `status` | text | `success` or `failure` |
+| `duration_ms` | integer | Response time in milliseconds |
+| `error_message` | text | Error details (null on success) |
+| `fallback_occurred` | boolean | Whether this was a fallback attempt |
+| `recipe_source` | text | First 100 chars of input for context |
+| `created_at` | timestamp | Event timestamp |
+
 ## 🤖 AI Recipe Import
 
 ### How It Works
@@ -111,7 +141,7 @@ recipe-web/
 
 3. **AI Parsing**
    - Sends content to Gemini 3 Flash (`gemini-3-flash-preview`)
-   - **Smart Fallback**: If primary model hits rate limit (429), automatically retries with `gemini-2.5-flash`
+   - **Smart Fallback**: If primary model fails (429/503 errors), automatically retries with `gemini-2.5-flash`
    - Uses strict prompt with formatting rules
    - Returns structured JSON with recipe data
 
@@ -168,11 +198,17 @@ npm install
 
 3. **Set up environment variables**
 
-Create `.env.local`:
+Create `.env.local` (see `.env.example`):
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 GEMINI_API_KEY=your_gemini_api_key
+
+# Optional: Confluence MCP integration
+CONFLUENCE_URL=https://yourname.atlassian.net
+CONFLUENCE_EMAIL=your@email.com
+CONFLUENCE_API_TOKEN=your_confluence_api_token
+CONFLUENCE_SPACE_KEY=RECIPE
 ```
 
 4. **Run development server**
@@ -300,9 +336,15 @@ npm run build  # Uses --webpack flag for PWA compatibility
 
 ### Maintenance Scripts
 
-**`scripts/`**: Contains utility scripts for database maintenance.
+**`scripts/`**: Contains utility and debug scripts.
 - `fix-recipe-owners.ts`: Migration script to assign ownership of legacy recipes.
 - `debug-recipes.ts`: Utility to fetch and debug recipe data.
+- `check-models.ts`: Verify available Gemini models.
+- `test-youtube.ts`: Test YouTube transcript extraction.
+- `verify-parse-api.ts`: End-to-end test for the parse API.
+- `publish-to-confluence.js`: Publish recipes to Confluence.
+- `debug_yt_extraction.ts`, `debug_live_api.ts`, `debug_recipe_failure.ts`, `debug_standalone.ts`: Various debug utilities.
+- `verify-gemini-direct.ts`, `verify-model-availability.ts`: Model availability checks.
 
 Run scripts using `tsx`:
 ```bash

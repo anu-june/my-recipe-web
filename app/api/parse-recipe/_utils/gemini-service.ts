@@ -87,24 +87,9 @@ RESPOND ONLY WITH VALID JSON in this exact format (no markdown, no extra text):
                 errorMsg = error.message;
 
                 if (error.message.includes('429') || error.message.includes('503')) {
-                    // Continue to next model on recoverable errors
-                } else {
-                    // Rethrow if it's not a rate limit error? 
-                    // Actually original logic continued for 429/503 but threw for others?
-                    // Original logic: if 429/503 continue, else loop finishes and throws lastError.
-                    // Wait, original logic ONLY continued if 429/503. It didn't break for others, it just retried loop? 
-                    // No, "if (error...includes...) continue;" implied it moves to next iteration.
-                    // If NOT 429/503, it falls through to end of loop block? No, it's inside the loop.
-                    // If it doesn't continue, it proceeds to end of loop body?
-                    // Ah, the original code had:
-                    // if (error...429/503) { continue; }
-                    // It had no "else break" so it would effectively continue for ALL errors unless it rethrew.
-                    // Let's re-read original.
-                    // It CAUGHT all errors, logged, assigned lastError.
-                    // Then `if (429/503) continue`. 
-                    // Then loop ends naturally? Yes. So it actually tried ALL models for ANY error.
-                    // My logging logic shouldn't change that behavior.
+                    // Recoverable error — continue to next model
                 }
+                // For all other errors, loop continues to try remaining models
             } finally {
                 // Log event to Supabase
                 const duration = Date.now() - startTime;

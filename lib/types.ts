@@ -18,6 +18,7 @@ export type Recipe = {
     is_published: boolean;
     user_id?: string;
     created_at?: string;
+    updated_at?: string;
 };
 
 // For list views that don't need all fields
