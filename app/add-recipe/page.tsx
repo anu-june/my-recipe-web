@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -9,11 +9,19 @@ import { validateRecipe, ValidationErrors } from '@/lib/validation';
 import RecipeImporter from '../components/RecipeImporter';
 import RequireAuth from '../components/RequireAuth';
 import { useAuth } from '@/app/context/AuthContext';
+import { isAdmin } from '@/lib/auth-utils';
 import type { ParsedRecipe } from '@/lib/types';
 
 function AddRecipeContent() {
     const router = useRouter();
     const { user } = useAuth();
+
+    // Redirect non-admin users
+    useEffect(() => {
+        if (user && !isAdmin(user.email)) {
+            router.push('/');
+        }
+    }, [user, router]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});

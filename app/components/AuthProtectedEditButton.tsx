@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '@/app/context/AuthContext';
+import { isAdmin } from '@/lib/auth-utils';
 import Link from 'next/link';
 
 interface AuthProtectedEditButtonProps {
@@ -10,8 +11,8 @@ interface AuthProtectedEditButtonProps {
 export default function AuthProtectedEditButton({ recipeId }: AuthProtectedEditButtonProps) {
     const { user, loading } = useAuth();
 
-    // Don't show if not logged in
-    if (loading || !user) {
+    // Don't show if not logged in or not an admin
+    if (loading || !user || !isAdmin(user.email)) {
         return null;
     }
 

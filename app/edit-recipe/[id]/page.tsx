@@ -8,6 +8,8 @@ import type { Recipe } from '@/lib/types';
 import { formatIngredients, formatSteps } from '@/lib/recipeFormatters';
 import { validateRecipe, ValidationErrors } from '@/lib/validation';
 import RequireAuth from '@/app/components/RequireAuth';
+import { useAuth } from '@/app/context/AuthContext';
+import { isAdmin } from '@/lib/auth-utils';
 
 function EditRecipeContent({
     params,
@@ -15,6 +17,14 @@ function EditRecipeContent({
     params: Promise<{ id: string }>;
 }) {
     const router = useRouter();
+    const { user } = useAuth();
+
+    // Redirect non-admin users
+    useEffect(() => {
+        if (user && !isAdmin(user.email)) {
+            router.push('/');
+        }
+    }, [user, router]);
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
     const [error, setError] = useState('');

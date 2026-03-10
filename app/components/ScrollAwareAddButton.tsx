@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/app/context/AuthContext';
+import { isAdmin } from '@/lib/auth-utils';
 
 export default function ScrollAwareAddButton() {
     const { user, loading } = useAuth();
@@ -21,8 +22,8 @@ export default function ScrollAwareAddButton() {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    // Don't show if not logged in or still loading
-    if (loading || !user) {
+    // Don't show if not logged in or not an admin
+    if (loading || !user || !isAdmin(user.email)) {
         return null;
     }
 
