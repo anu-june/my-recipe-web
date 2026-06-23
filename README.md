@@ -1,409 +1,203 @@
 # Recipe Collection Web App
 
-A modern, elegant recipe management application built with Next.js, featuring AI-powered recipe import, beautiful design, and seamless organization.
+A personal recipe collection app built with Next.js, Supabase, and Gemini-powered recipe import. It supports manual recipe management, URL and YouTube import, admin-only editing, and PWA installation.
 
-## 🌟 Features
+## Features
 
-### Core Functionality
-- **Recipe Management**: Create, edit, delete, view, and organize your personal recipe collection
-- **AI Recipe Import**: Import recipes from any URL, YouTube video (via transcript), or raw text using Google Gemini 3 Flash with smart fallback
-- **Smart Organization**: Recipes automatically grouped by category and sorted alphabetically
-- **Search**: Quick search across recipe titles and categories
-- **Progressive Web App (PWA)**: Install on mobile/desktop, works offline, fast caching
-- **Responsive Design**: Beautiful, minimal interface with earth-tone aesthetics
+- Browse published recipes on a responsive home page with search and category grouping.
+- Add, edit, and delete recipes as an authenticated admin user.
+- Import recipes from raw text, recipe pages, or YouTube links.
+- Extract recipe data from JSON-LD when available, with HTML and transcript fallbacks.
+- Install the app as a PWA on desktop or mobile.
+- Track Gemini model attempts in Supabase for fallback and observability.
 
-### AI-Powered Import
-- Parse recipes from any website URL
-- **YouTube Support**: Extracts recipes from video descriptions AND transcripts (captions)
-- Extract from raw text, notes, or transcripts
-- JSON-LD structured data extraction for accuracy
-- Automatic formatting to consistent template
-- Source URL tracking
+## Tech Stack
 
-## 🏗️ Architecture
+- Next.js 16 App Router
+- React 19
+- TypeScript
+- Tailwind CSS 4
+- Supabase
+- Google Gemini via `@google/generative-ai`
+- `@ducanh2912/next-pwa`
 
-### Tech Stack
+## Current AI Behavior
 
-**Frontend**
-- **Framework**: Next.js 16 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS v4
-- **Fonts**: Playfair Display (serif), Lato (sans-serif), Dancing Script (handwriting)
+The recipe import flow in [app/api/parse-recipe/_utils/gemini-service.ts](/D:/recipe-web/app/api/parse-recipe/_utils/gemini-service.ts):
 
-**Backend**
-- **Database**: Supabase (PostgreSQL)
-- **AI**: Google Gemini 3 Flash (with auto-fallback to 2.5 Flash)
-- **PWA**: @ducanh2912/next-pwa with Workbox
-- **Deployment**: Vercel
+- tries `gemini-2.5-flash` first
+- falls back to `gemini-3-flash-preview` if needed
+- validates the parsed JSON shape before returning it
+- logs model attempts to the `model_events` table
 
-### Project Structure
+## Project Structure
 
-```
+```text
 recipe-web/
-├── app/
-│   ├── api/
-│   │   └── parse-recipe/
-│   │       ├── route.ts              # AI recipe parsing endpoint
-│   │       └── _utils/
-│   │           ├── gemini-service.ts  # Gemini AI parsing with fallback
-│   │           ├── youtube-service.ts # YouTube data extraction
-│   │           └── web-service.ts     # Web page data extraction
-│   ├── auth/
-│   │   └── callback/
-│   │       └── route.ts              # OAuth callback handler
-│   ├── components/
-│   │   ├── AuthProtectedEditButton.tsx  # Auth-guarded edit button
-│   │   ├── RecipeImporter.tsx           # AI import UI component
-│   │   ├── RecipeList.tsx               # Recipe grid with search & grouping
-│   │   ├── RequireAuth.tsx              # Auth wrapper component
-│   │   ├── ScrollAwareAddButton.tsx     # Floating action button
-│   │   └── UserMenu.tsx                 # User login/logout menu
-│   ├── context/
-│   │   └── AuthContext.tsx           # Auth context provider
-│   ├── login/
-│   │   └── page.tsx                  # Login page
-│   ├── recipe/[id]/
-│   │   └── page.tsx                  # Recipe detail view
-│   ├── add-recipe/
-│   │   └── page.tsx                  # Add recipe form
-│   ├── edit-recipe/[id]/
-│   │   └── page.tsx                  # Edit recipe form
-│   ├── page.tsx                      # Landing page
-│   ├── layout.tsx                    # Root layout
-│   └── globals.css                   # Global styles & Tailwind config
-├── lib/
-│   ├── supabaseClient.ts             # Supabase configuration
-│   ├── types.ts                      # Shared TypeScript types
-│   ├── recipeFormatters.ts           # Ingredient/step formatters
-│   ├── validation.ts                 # Form validation utilities
-│   └── auth-utils.ts                 # Admin authorization helper
-├── scripts/                          # Utility & debug scripts (run with npx tsx)
-└── public/
-    ├── header-bg.png                 # Hero section background
-    ├── icon.svg                      # PWA app icon (SVG)
-    ├── icon-192.png                  # PWA icon 192x192
-    ├── icon-512.png                  # PWA icon 512x512
-    └── manifest.json                 # PWA manifest
-
+  app/
+    api/parse-recipe/
+      route.ts
+      _utils/
+        gemini-service.ts
+        web-service.ts
+        youtube-service.ts
+    add-recipe/page.tsx
+    auth/callback/route.ts
+    components/
+    context/AuthContext.tsx
+    edit-recipe/[id]/page.tsx
+    login/page.tsx
+    recipe/[id]/page.tsx
+    globals.css
+    layout.tsx
+    page.tsx
+  lib/
+    auth-utils.ts
+    recipeFormatters.ts
+    supabaseClient.ts
+    types.ts
+    validation.ts
+  public/
+    manifest.json
+    icon-192.png
+    icon-512.png
+    icon.svg
+    header-bg.png
+  scripts/
+  supabase/migrations/
+  .github/workflows/backup.yml
 ```
 
-## 🗄️ Database Schema
+## Environment Variables
 
-### `recipes` Table
+Create `.env.local` using [.env.example](/D:/recipe-web/.env.example):
 
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | uuid | Primary key |
-| `user_id` | uuid | Owner ID (references auth.users) |
-| `title` | text | Recipe name |
-| `slug` | text | URL-friendly identifier |
-| `category` | text | Recipe category (Dessert, Main, etc.) |
-| `cuisine` | text | Cuisine type (Italian, Indian, etc.) |
-| `servings` | text | Serving size |
-| `prep_time_minutes` | integer | Preparation time |
-| `cook_time_minutes` | integer | Cooking time |
-| `total_time_minutes` | integer | Total time (auto-calculated) |
-| `ingredients` | text | Formatted ingredient list |
-| `steps` | text | Numbered cooking steps |
-| `notes` | text | Additional tips and source info |
-| `source_url` | text | Original recipe URL |
-| `is_published` | boolean | Visibility flag |
-| `created_at` | timestamp | Creation timestamp |
-| `updated_at` | timestamp | Last update timestamp |
-
-### `model_events` Table
-
-Logs AI model usage for observability and fallback tracking.
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `id` | uuid | Primary key |
-| `model_name` | text | Model used (e.g., `gemini-3-flash-preview`) |
-| `status` | text | `success` or `failure` |
-| `duration_ms` | integer | Response time in milliseconds |
-| `error_message` | text | Error details (null on success) |
-| `fallback_occurred` | boolean | Whether this was a fallback attempt |
-| `recipe_source` | text | First 100 chars of input for context |
-| `created_at` | timestamp | Event timestamp |
-
-## 🤖 AI Recipe Import
-
-### How It Works
-
-1. **Input Processing**
-   - User pastes URL or raw recipe text
-   - System detects if input is a URL using regex
-
-2. **Content Extraction**
-   - **For URLs**: Fetches HTML with browser-like headers
-   - **For YouTube**: Fetches video description AND transcript (captions) using `youtube-transcript` to "listen" to the recipe
-   - **JSON-LD Priority**: Searches for `application/ld+json` schema
-   - **Fallback**: Strips HTML tags and extracts text content
-
-3. **AI Parsing**
-   - Sends content to Gemini 3 Flash (`gemini-3-flash-preview`)
-   - **Smart Fallback**: If primary model fails (429/503 errors), automatically retries with `gemini-2.5-flash`
-   - Uses strict prompt with formatting rules
-   - Returns structured JSON with recipe data
-
-4. **Form Auto-Fill**
-   - Populates all form fields
-   - Generates slug from title
-   - Captures source URL automatically
-
-### Formatting Template
-
-**Ingredients**: `Ingredient – quantity` (flat list, marination exception)  
-**Steps**: Numbered with repeated quantities  
-**Notes**: Tips + Source URL  
-**Units**: Standardized (cups, tbsp, tsp, grams, ml) with automatic mL to cups conversion
-
-## 🎨 Design System
-
-### Color Palette
-- **Sage Green**: Primary color (#8B9A7E family)
-- **Terracotta**: Accent color (#C97B63 family)
-- **Earth Tones**: Warm, minimal aesthetic
-
-### Typography
-- **Headings**: Playfair Display (serif)
-- **Body**: Lato (sans-serif)
-- **Decorative**: Dancing Script (handwriting)
-
-### Layout Principles
-- Elegant minimal design
-- 3-column responsive grid (large screens)
-- Generous whitespace
-- Subtle hover effects and transitions
-
-## 🚀 Getting Started
-
-### Prerequisites
-- Node.js 18 LTS
-- npm or yarn
-- Supabase account
-- Google Gemini API key
-
-### Installation
-
-1. **Clone the repository**
-```bash
-git clone https://github.com/anu-june/my-recipe-web.git
-cd recipe-web
-```
-
-2. **Install dependencies**
-```bash
-npm install
-```
-
-3. **Set up environment variables**
-
-Create `.env.local` (see `.env.example`):
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-# Admin email(s) allowed to add/edit/delete recipes (comma-separated)
 NEXT_PUBLIC_ADMIN_EMAILS=your_admin@email.com
 GEMINI_API_KEY=your_gemini_api_key
 
-# Optional: Confluence MCP integration
 CONFLUENCE_URL=https://yourname.atlassian.net
 CONFLUENCE_EMAIL=your@email.com
 CONFLUENCE_API_TOKEN=your_confluence_api_token
 CONFLUENCE_SPACE_KEY=RECIPE
 ```
 
-4. **Run development server**
+Notes:
+
+- `NEXT_PUBLIC_ADMIN_EMAILS` is a comma-separated allowlist used by [lib/auth-utils.ts](/D:/recipe-web/lib/auth-utils.ts).
+- The Confluence variables are only needed for [scripts/publish-to-confluence.js](/D:/recipe-web/scripts/publish-to-confluence.js).
+
+## Getting Started
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Run the dev server:
+
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+3. Open `http://localhost:3000`.
 
-### Database Setup
+## Database Setup
 
-Run this SQL in your Supabase SQL editor:
+Use the migration files in [supabase/migrations](/D:/recipe-web/supabase/migrations) as the source of truth:
 
-```sql
-create table recipes (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid references auth.users(id),
-  title text not null,
-  slug text unique not null,
-  category text,
-  cuisine text,
-  servings text,
-  prep_time_minutes integer,
-  cook_time_minutes integer,
-  total_time_minutes integer,
-  ingredients text not null,
-  steps text not null,
-  notes text,
-  source_url text,
-  is_published boolean default true,
-  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
-  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
-);
+- [20251216_create_model_events_table.sql](/D:/recipe-web/supabase/migrations/20251216_create_model_events_table.sql)
+- [20260310_add_rls_policies.sql](/D:/recipe-web/supabase/migrations/20260310_add_rls_policies.sql)
 
--- Enable Row Level Security
-alter table recipes enable row level security;
+At a high level, the app expects:
 
--- Admin helper function (replace email with your admin email)
-create or replace function is_admin()
-returns boolean as $$
-begin
-  return (auth.jwt() ->> 'email' = 'your_admin@email.com');
-end;
-$$ language plpgsql security definer;
+- a `recipes` table for recipe content
+- a `model_events` table for AI logging
+- RLS policies that allow public reads of published recipes
+- admin-only insert, update, and delete permissions on recipes
 
--- Create policies
--- 1. Anyone can read published recipes
-create policy "Anyone can read published recipes" on recipes for select using (is_published = true);
+Important:
 
--- 2. Only admin can insert/update/delete
-create policy "Admin can insert recipes" on recipes for insert with check (is_admin());
-create policy "Admin can update recipes" on recipes for update using (is_admin()) with check (is_admin());
-create policy "Admin can delete recipes" on recipes for delete using (is_admin());
-```
+- The checked-in migration currently hardcodes one admin email in the SQL helper function.
+- The frontend separately uses `NEXT_PUBLIC_ADMIN_EMAILS` for client-side admin checks.
+- Keep those two sides aligned when configuring a real environment.
 
-### Security Features
-- **Row Level Security (RLS)**: Enforced on the database level via an `is_admin()` function.
-- **Admin-Only Model**: Only the designated admin user can add, edit, or delete recipes.
-- **Public Read**: Anyone can view published recipes without authentication.
-- **Frontend Guards**: Admin checks via `NEXT_PUBLIC_ADMIN_EMAILS` env variable and `lib/auth-utils.ts`.
+## Main Scripts
 
-## 📱 Progressive Web App (PWA)
+App scripts from [package.json](/D:/recipe-web/package.json):
 
-### Installation
-
-**Desktop (Chrome/Edge)**
-- Look for the install icon in the address bar
-- Click "Install Recipe Collection"
-
-**Mobile - Android (Chrome)**
-- Tap the menu (⋮) → "Install App" or "Add to Home Screen"
-- Or wait for the automatic install banner
-
-**Mobile - iOS (Safari)**
-- Tap the Share button → "Add to Home Screen"
-
-### Offline Functionality
-- **Caching Strategy**: 
-  - Images cached for 7 days
-  - API responses cached for 5 minutes (NetworkFirst)
-  - Previously visited pages work offline
-- **Service Worker**: Auto-generated, disabled in development mode
-
-### Build Considerations
-- Production builds require `--webpack` flag (configured in `package.json`)
-- PWA not active in development (`npm run dev`)
-- Icons: SVG with PNG fallbacks for compatibility
-
-## 📦 Deployment
-
-### Vercel Deployment
-
-1. **Connect repository to Vercel**
-2. **Add environment variables**:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   - `NEXT_PUBLIC_ADMIN_EMAILS`
-   - `GEMINI_API_KEY`
-3. **Deploy**: Automatic on push to `main`
-
-### Build Command
 ```bash
-npm run build  # Uses --webpack flag for PWA compatibility
+npm run dev
+npm run build
+npm run start
+npm run lint
+npm run migrate
 ```
 
-## 🔑 Key Features Explained
+Utility scripts:
 
-### Scroll-Aware Add Button
-- Hidden on landing (clean hero)
-- Appears when scrolling past header
-- Smooth fade-in/out transitions
-- Fixed position for easy access
+- TypeScript scripts: `npx tsx scripts/<name>.ts`
+- Node script: `node scripts/publish-to-confluence.js`
 
-### Recipe Organization
-- Grouped by category
-- Alphabetically sorted within categories
-- "Uncategorized" always last
-- Real-time search filtering
+Useful examples:
 
-### Form Validation
-- Client-side validation before submit
-- Required fields: title, category, ingredients, steps
-- Auto-slug generation from title
-- Auto-calculation of total time
-
-## 🛠️ Development
-
-### Shared Utilities
-
-**`lib/types.ts`**: TypeScript interfaces  
-**`lib/recipeFormatters.ts`**: Ingredient/step formatting  
-**`lib/validation.ts`**: Form validation logic
-
-### Maintenance Scripts
-
-**`scripts/`**: Contains utility and debug scripts.
-- `fix-recipe-owners.ts`: Migration script to assign ownership of legacy recipes.
-- `debug-recipes.ts`: Utility to fetch and debug recipe data.
-- `check-models.ts`: Verify available Gemini models.
-- `test-youtube.ts`: Test YouTube transcript extraction.
-- `verify-parse-api.ts`: End-to-end test for the parse API.
-- `publish-to-confluence.js`: Publish recipes to Confluence.
-- `debug_yt_extraction.ts`, `debug_live_api.ts`, `debug_recipe_failure.ts`, `debug_standalone.ts`: Various debug utilities.
-- `verify-gemini-direct.ts`, `verify-model-availability.ts`: Model availability checks.
-
-Run scripts using `tsx`:
 ```bash
-npx tsx scripts/your-script.ts
+npx tsx scripts/verify-parse-api.ts
+npx tsx scripts/check-models.ts
+npx tsx scripts/test-youtube.ts
+node scripts/publish-to-confluence.js
 ```
 
-### CI/CD Pipelines
+## Testing the App
 
-**Database Backup**:
-- Automatically runs monthly (cron: `0 0 1 * *`) via GitHub Actions.
-- Uses `pg_dump` (Dockerized v17) to backup the Supabase database.
-- Artifacts are retained for 90 days.
-### Performance Optimizations
-- `useMemo` for filtering and grouping
-- Dynamic rendering (`revalidate = 0`)
-- Optimized image loading
-- Minimal re-renders
+Manual test flow:
 
-## 📝 Recipe Template
+1. Start the app with `npm run dev`.
+2. Open the home page and confirm recipe list and search work.
+3. Log in and verify admin-only actions appear for an allowed email.
+4. Add a recipe manually and confirm it shows on the home page.
+5. Edit a recipe and confirm the detail page updates.
+6. Delete a test recipe and confirm it disappears.
+7. Paste recipe text or a recipe URL into the importer and confirm fields populate.
+8. Try a YouTube URL if `GEMINI_API_KEY` is configured.
 
-When importing or adding recipes, follow this format:
+Validation commands:
 
-**Ingredients**
-```
-All-purpose flour – 2 cups
-Sugar – 1 cup
-Eggs – 3
+```bash
+npm run lint
+npm run build
 ```
 
-**Steps**
-```
-1. Preheat oven to 350°F
-2. Mix 2 cups flour and 1 cup sugar in a bowl
-3. Add 3 eggs and beat until smooth
-```
+The project was last validated successfully with both commands.
 
-## 🤝 Contributing
+## PWA Notes
 
-This is a personal project, but suggestions are welcome!
+- Production builds use `next build --webpack`.
+- The service worker is generated into `public/sw.js`.
+- PWA behavior is disabled during development.
+- Manifest and icons live in [public/manifest.json](/D:/recipe-web/public/manifest.json) and `public/`.
 
-## 📄 License
+## Deployment
 
-MIT License - feel free to use this as a template for your own recipe app.
+The app is set up for Vercel-style deployment:
 
-## 🙏 Acknowledgments
+- configure the same environment variables used locally
+- run `npm run build`
+- serve with `npm run start` or the platform equivalent
 
-- **Next.js** - React framework
-- **Supabase** - Backend and database
-- **Google Gemini** - AI recipe parsing
-- **Vercel** - Hosting and deployment
-- **Tailwind CSS** - Styling framework
+## GitHub Workflow
+
+[.github/workflows/backup.yml](/D:/recipe-web/.github/workflows/backup.yml) runs a monthly database backup and also supports manual triggering. It uses Dockerized `pg_dump` and keeps artifacts for 90 days.
+
+## Known Maintenance Notes
+
+- Remaining `npm outdated` items are major-version jumps for `@types/node`, `marked`, and `typescript`.
+- Remaining `npm audit` findings are transitive to the current Next/PWA toolchain and would require breaking changes or forceful dependency moves.
+- On Windows, if build artifacts are locked, clearing `.next` or generated PWA files may be necessary before rebuilding.
+
+## License
+
+MIT
