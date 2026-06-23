@@ -1,5 +1,9 @@
 import { YoutubeTranscript } from 'youtube-transcript';
 
+function getErrorMessage(error: unknown, fallback: string) {
+    return error instanceof Error ? error.message : fallback;
+}
+
 export async function extractYoutubeData(url: string): Promise<string | null> {
     const youtubeRegex = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/;
     const youtubeMatch = url.match(youtubeRegex);
@@ -43,9 +47,9 @@ export async function extractYoutubeData(url: string): Promise<string | null> {
                     continue;
                 }
 
-            } catch (fetchError: any) {
-                console.warn(`YouTube fetch attempt ${attempt}/${maxRetries} threw error:`, fetchError.message);
-                lastError = fetchError;
+            } catch (fetchError) {
+                console.warn(`YouTube fetch attempt ${attempt}/${maxRetries} threw error:`, getErrorMessage(fetchError, 'Unknown fetch error'));
+                lastError = fetchError instanceof Error ? fetchError : new Error('Unknown fetch error');
 
                 if (attempt < maxRetries) {
                     const delay = Math.pow(2, attempt) * 1000;
@@ -90,7 +94,7 @@ export async function extractYoutubeData(url: string): Promise<string | null> {
                     }
                 }
 
-            } catch (parseError) {
+            } catch {
                 // Silent failure for optional data
             }
         }

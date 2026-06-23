@@ -13,7 +13,7 @@ async function verifyModel() {
         process.exit(1);
     }
 
-    const modelName = 'gemini-3-flash-preview';
+    const modelName = 'gemini-2.5-flash';
     console.log(`Testing generation with model: ${modelName}`);
 
     const genAI = new GoogleGenerativeAI(apiKey);

@@ -4,30 +4,6 @@ import Link from 'next/link';
 import AuthProtectedEditButton from '@/app/components/AuthProtectedEditButton';
 import type { Recipe } from '@/lib/types';
 
-
-
-// Helper function to parse ingredients into table format
-function parseIngredientsTable(ingredients: string) {
-    const lines = ingredients.trim().split('\n').filter(line => line.trim());
-
-    // Check if it looks like a table format (has " - " separator)
-    const hasTableFormat = lines.some(line => line.includes(' - '));
-
-    if (!hasTableFormat) {
-        return null;
-    }
-
-    const rows = lines.map(line => {
-        const parts = line.split(' - ');
-        return {
-            ingredient: parts[0]?.trim() || '',
-            quantity: parts[1]?.trim() || ''
-        };
-    });
-
-    return rows;
-}
-
 // Helper function to parse steps into structured format
 function parseStepsTable(steps: string) {
     const lines = steps.trim().split('\n').filter(line => line.trim());
@@ -105,7 +81,7 @@ export default async function RecipePage({
                 <div className="max-w-3xl mx-auto p-10">
                     <p className="text-xl text-gray-600 mb-4">Recipe not found</p>
                     <Link href="/" className="text-blue-600 hover:underline">
-                        ← Back to recipes
+                        &larr; Back to recipes
                     </Link>
                 </div>
             </main>
@@ -120,7 +96,7 @@ export default async function RecipePage({
                     href="/"
                     className="inline-flex items-center gap-2 text-sage-500 hover:text-sage-800 font-medium mb-12 tracking-wide uppercase text-xs transition-colors"
                 >
-                    ← Back to Collection
+                    &larr; Back to Collection
                 </Link>
 
                 {/* Recipe Header */}
@@ -341,3 +317,4 @@ export default async function RecipePage({
         </main>
     );
 }
+

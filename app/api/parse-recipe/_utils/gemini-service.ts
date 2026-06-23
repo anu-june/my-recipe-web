@@ -1,7 +1,23 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { supabase } from '@/lib/supabaseClient';
+import type { ParsedRecipe } from '@/lib/types';
 
-export async function parseRecipeWithGemini(contentToParse: string, apiKey: string): Promise<any> {
+function getErrorMessage(error: unknown, fallback: string) {
+    return error instanceof Error ? error.message : fallback;
+}
+
+function isParsedRecipe(value: unknown): value is ParsedRecipe {
+    if (!value || typeof value !== 'object') {
+        return false;
+    }
+
+    const candidate = value as Partial<ParsedRecipe>;
+    return typeof candidate.title === 'string'
+        && typeof candidate.ingredients === 'string'
+        && typeof candidate.steps === 'string';
+}
+
+export async function parseRecipeWithGemini(contentToParse: string, apiKey: string): Promise<ParsedRecipe> {
     const genAI = new GoogleGenerativeAI(apiKey);
 
     const prompt = `
@@ -65,9 +81,9 @@ RESPOND ONLY WITH VALID JSON in this exact format (no markdown, no extra text):
 }
 `;
 
-    const generateWithFallback = async (prompt: string) => {
-        const models = ['gemini-3-flash-preview', 'gemini-2.5-flash'];
-        let lastError;
+    const generateWithFallback = async (prompt: string): Promise<string> => {
+        const models = ['gemini-2.5-flash', 'gemini-3-flash-preview'];
+        let lastError: Error | null = null;
 
         for (const [index, modelName] of models.entries()) {
             const startTime = Date.now();
@@ -81,12 +97,13 @@ RESPOND ONLY WITH VALID JSON in this exact format (no markdown, no extra text):
                 const text = response.text();
                 isSuccess = true;
                 return text;
-            } catch (error: any) {
-                console.warn(`Model ${modelName} failed:`, error.message);
-                lastError = error;
-                errorMsg = error.message;
+            } catch (error) {
+                const message = getErrorMessage(error, 'Unknown Gemini error');
+                console.warn(`Model ${modelName} failed:`, message);
+                lastError = error instanceof Error ? error : new Error(message);
+                errorMsg = message;
 
-                if (error.message.includes('429') || error.message.includes('503')) {
+                if (message.includes('429') || message.includes('503')) {
                     // Recoverable error — continue to next model
                 }
                 // For all other errors, loop continues to try remaining models
@@ -106,13 +123,17 @@ RESPOND ONLY WITH VALID JSON in this exact format (no markdown, no extra text):
                 });
             }
         }
-        throw lastError;
+        throw lastError ?? new Error('Gemini returned no response');
     };
 
     try {
         const text = await generateWithFallback(prompt);
         const cleanedText = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-        const recipeData = JSON.parse(cleanedText);
+        const recipeData = JSON.parse(cleanedText) as unknown;
+
+        if (!isParsedRecipe(recipeData)) {
+            throw new Error('Gemini returned an invalid recipe payload');
+        }
 
         if (recipeData.prep_time_minutes && recipeData.cook_time_minutes) {
             recipeData.total_time_minutes = recipeData.prep_time_minutes + recipeData.cook_time_minutes;

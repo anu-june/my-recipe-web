@@ -3,6 +3,10 @@ import { extractYoutubeData } from './_utils/youtube-service';
 import { extractWebData } from './_utils/web-service';
 import { parseRecipeWithGemini } from './_utils/gemini-service';
 
+function getErrorMessage(error: unknown, fallback: string) {
+    return error instanceof Error ? error.message : fallback;
+}
+
 export async function POST(request: NextRequest) {
     try {
         const { input } = await request.json();
@@ -44,11 +48,11 @@ export async function POST(request: NextRequest) {
                     // Handle regular URL
                     contentToParse = await extractWebData(input);
                 }
-            } catch (extractionError: any) {
+            } catch (extractionError) {
                 console.warn('Extraction failed:', extractionError);
                 // Return specific error messages based on the service failure
                 return NextResponse.json(
-                    { error: extractionError.message || 'Failed to extract content from URL. Please paste the recipe manually.' },
+                    { error: getErrorMessage(extractionError, 'Failed to extract content from URL. Please paste the recipe manually.') },
                     { status: 422 }
                 );
             }
@@ -58,17 +62,17 @@ export async function POST(request: NextRequest) {
         try {
             const recipeData = await parseRecipeWithGemini(contentToParse, apiKey);
             return NextResponse.json({ recipe: recipeData });
-        } catch (geminiError: any) {
+        } catch {
             return NextResponse.json(
                 { error: 'Failed to parse recipe with AI. Please try again.' },
                 { status: 500 }
             );
         }
 
-    } catch (error: any) {
+    } catch (error) {
         console.error('Error parsing recipe:', error);
         return NextResponse.json(
-            { error: `Failed to parse recipe: ${error.message || 'Unknown error'}` },
+            { error: `Failed to parse recipe: ${getErrorMessage(error, 'Unknown error')}` },
             { status: 500 }
         );
     }

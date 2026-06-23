@@ -47,9 +47,9 @@ export default function RecipeImporter({ onRecipeParsed }: RecipeImporterProps) 
 
     return (
         <div className="bg-sage-50 border border-sage-300 p-6 rounded-sm mb-8">
-            <h3 className="text-xl font-bold text-sage-900 mb-2">✨ Import Recipe</h3>
+            <h3 className="text-xl font-bold text-sage-900 mb-2">Import Recipe</h3>
             <p className="text-sage-600 text-sm mb-4">
-                Paste a recipe URL or the full recipe text below, and we'll extract all the details for you.
+                Paste a recipe URL or the full recipe text below, and we&apos;ll extract the details for you.
             </p>
 
             <textarea
@@ -82,9 +82,10 @@ or paste full recipe text including ingredients and steps"
                         Parsing Recipe...
                     </span>
                 ) : (
-                    '🤖 Parse Recipe with AI'
+                    'Parse Recipe with AI'
                 )}
             </button>
         </div>
     );
 }
+

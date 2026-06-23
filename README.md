@@ -75,7 +75,8 @@ recipe-web/
 │   ├── supabaseClient.ts             # Supabase configuration
 │   ├── types.ts                      # Shared TypeScript types
 │   ├── recipeFormatters.ts           # Ingredient/step formatters
-│   └── validation.ts                 # Form validation utilities
+│   ├── validation.ts                 # Form validation utilities
+│   └── auth-utils.ts                 # Admin authorization helper
 ├── scripts/                          # Utility & debug scripts (run with npx tsx)
 └── public/
     ├── header-bg.png                 # Hero section background
@@ -202,6 +203,8 @@ Create `.env.local` (see `.env.example`):
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+# Admin email(s) allowed to add/edit/delete recipes (comma-separated)
+NEXT_PUBLIC_ADMIN_EMAILS=your_admin@email.com
 GEMINI_API_KEY=your_gemini_api_key
 
 # Optional: Confluence MCP integration
@@ -246,22 +249,29 @@ create table recipes (
 -- Enable Row Level Security
 alter table recipes enable row level security;
 
+-- Admin helper function (replace email with your admin email)
+create or replace function is_admin()
+returns boolean as $$
+begin
+  return (auth.jwt() ->> 'email' = 'your_admin@email.com');
+end;
+$$ language plpgsql security definer;
+
 -- Create policies
--- 1. Allow public read access
-create policy "Public recipes are viewable by everyone" on recipes for select using (true);
+-- 1. Anyone can read published recipes
+create policy "Anyone can read published recipes" on recipes for select using (is_published = true);
 
--- 2. Allow authenticated users to insert their own recipes
-create policy "Users can insert their own recipes" on recipes for insert with check (auth.uid() = user_id);
-
--- 3. Allow users to update/delete only their own recipes
-create policy "Users can update own recipes" on recipes for update using (auth.uid() = user_id);
-create policy "Users can delete own recipes" on recipes for delete using (auth.uid() = user_id);
+-- 2. Only admin can insert/update/delete
+create policy "Admin can insert recipes" on recipes for insert with check (is_admin());
+create policy "Admin can update recipes" on recipes for update using (is_admin()) with check (is_admin());
+create policy "Admin can delete recipes" on recipes for delete using (is_admin());
 ```
 
 ### Security Features
-- **Row Level Security (RLS)**: Enforced on the database level.
-- **User Ownership**: Recipes are linked to `auth.users`.
-- **Protected Actions**: Only the owner can edit or delete their recipes.
+- **Row Level Security (RLS)**: Enforced on the database level via an `is_admin()` function.
+- **Admin-Only Model**: Only the designated admin user can add, edit, or delete recipes.
+- **Public Read**: Anyone can view published recipes without authentication.
+- **Frontend Guards**: Admin checks via `NEXT_PUBLIC_ADMIN_EMAILS` env variable and `lib/auth-utils.ts`.
 
 ## 📱 Progressive Web App (PWA)
 
@@ -298,6 +308,7 @@ create policy "Users can delete own recipes" on recipes for delete using (auth.u
 2. **Add environment variables**:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `NEXT_PUBLIC_ADMIN_EMAILS`
    - `GEMINI_API_KEY`
 3. **Deploy**: Automatic on push to `main`
 

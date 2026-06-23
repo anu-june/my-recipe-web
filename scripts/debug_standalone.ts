@@ -58,7 +58,7 @@ async function extractYoutubeData(url: string) {
 
 async function parseWithGemini(text: string, apiKey: string) {
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const prompt = `
 You are a recipe extraction expert. Extract structured recipe data from the following text.

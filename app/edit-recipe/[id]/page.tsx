@@ -11,6 +11,10 @@ import RequireAuth from '@/app/components/RequireAuth';
 import { useAuth } from '@/app/context/AuthContext';
 import { isAdmin } from '@/lib/auth-utils';
 
+function getErrorMessage(error: unknown, fallback: string) {
+    return error instanceof Error ? error.message : fallback;
+}
+
 function EditRecipeContent({
     params,
 }: {
@@ -177,8 +181,8 @@ function EditRecipeContent({
             // Refresh the router cache and redirect to recipe detail page on success
             router.refresh();
             router.push(`/recipe/${recipeId}`);
-        } catch (err: any) {
-            setError(err.message || 'Failed to update recipe');
+        } catch (err) {
+            setError(getErrorMessage(err, 'Failed to update recipe'));
         } finally {
             setLoading(false);
         }
@@ -201,8 +205,8 @@ function EditRecipeContent({
             // Redirect to home page after successful deletion
             router.push('/');
             router.refresh();
-        } catch (err: any) {
-            setError(err.message || 'Failed to delete recipe');
+        } catch (err) {
+            setError(getErrorMessage(err, 'Failed to delete recipe'));
             setLoading(false);
         }
     };
@@ -227,7 +231,7 @@ function EditRecipeContent({
                         href="/"
                         className="inline-flex items-center gap-2 text-orange-600 hover:text-orange-700 font-medium mb-6 group"
                     >
-                        <span className="transform group-hover:-translate-x-1 transition-transform">←</span>
+                        <span className="transform group-hover:-translate-x-1 transition-transform">&larr;</span>
                         Back to recipes
                     </Link>
                     <div className="bg-white rounded-2xl shadow-xl p-8 border border-orange-100">
@@ -245,7 +249,7 @@ function EditRecipeContent({
                     href={`/recipe/${recipeId}`}
                     className="inline-flex items-center gap-2 text-orange-600 hover:text-orange-700 font-medium mb-6 group"
                 >
-                    <span className="transform group-hover:-translate-x-1 transition-transform">←</span>
+                    <span className="transform group-hover:-translate-x-1 transition-transform">&larr;</span>
                     Back to recipe
                 </Link>
 
@@ -279,6 +283,9 @@ function EditRecipeContent({
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                                 placeholder="e.g., Chicken Fried Rice"
                             />
+                            {validationErrors.title && (
+                                <p className="mt-2 text-sm text-red-600">{validationErrors.title}</p>
+                            )}
                         </div>
 
                         {/* Category and Cuisine */}
@@ -294,10 +301,13 @@ function EditRecipeContent({
                                     required
                                     value={formData.category}
                                     onChange={handleChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                                    placeholder="e.g., Main, Dessert"
-                                />
-                            </div>
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                placeholder="e.g., Main, Dessert"
+                            />
+                            {validationErrors.category && (
+                                <p className="mt-2 text-sm text-red-600">{validationErrors.category}</p>
+                            )}
+                        </div>
                             <div>
                                 <label htmlFor="cuisine" className="block text-sm font-semibold text-gray-700 mb-2">
                                     Cuisine
@@ -308,10 +318,13 @@ function EditRecipeContent({
                                     name="cuisine"
                                     value={formData.cuisine}
                                     onChange={handleChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                                    placeholder="e.g., Chinese, Italian"
-                                />
-                            </div>
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                placeholder="e.g., Chinese, Italian"
+                            />
+                            {validationErrors.cuisine && (
+                                <p className="mt-2 text-sm text-red-600">{validationErrors.cuisine}</p>
+                            )}
+                        </div>
                         </div>
 
                         {/* Servings and Times */}
@@ -340,10 +353,13 @@ function EditRecipeContent({
                                     name="prep_time_minutes"
                                     value={formData.prep_time_minutes}
                                     onChange={handleChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                                    placeholder="15"
-                                />
-                            </div>
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                placeholder="15"
+                            />
+                            {validationErrors.prep_time_minutes && (
+                                <p className="mt-2 text-sm text-red-600">{validationErrors.prep_time_minutes}</p>
+                            )}
+                        </div>
                             <div>
                                 <label htmlFor="cook_time_minutes" className="block text-sm font-semibold text-gray-700 mb-2">
                                     Cook (min)
@@ -354,10 +370,13 @@ function EditRecipeContent({
                                     name="cook_time_minutes"
                                     value={formData.cook_time_minutes}
                                     onChange={handleChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                                    placeholder="20"
-                                />
-                            </div>
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                placeholder="20"
+                            />
+                            {validationErrors.cook_time_minutes && (
+                                <p className="mt-2 text-sm text-red-600">{validationErrors.cook_time_minutes}</p>
+                            )}
+                        </div>
                             <div>
                                 <label htmlFor="total_time_minutes" className="block text-sm font-semibold text-gray-700 mb-2">
                                     Total (min) <span className="text-xs font-normal text-gray-500">(auto-calculated)</span>
@@ -389,6 +408,9 @@ function EditRecipeContent({
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent font-mono text-sm"
                                 placeholder="Rice - 2 cups&#10;Chicken - 1 cup&#10;Eggs - 2"
                             />
+                            {validationErrors.ingredients && (
+                                <p className="mt-2 text-sm text-red-600">{validationErrors.ingredients}</p>
+                            )}
                         </div>
 
                         {/* Steps */}
@@ -406,6 +428,9 @@ function EditRecipeContent({
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent font-mono text-sm"
                                 placeholder="1. Heat oil in a wok&#10;2. Add ingredients&#10;3. Cook for 5 minutes"
                             />
+                            {validationErrors.steps && (
+                                <p className="mt-2 text-sm text-red-600">{validationErrors.steps}</p>
+                            )}
                         </div>
 
                         {/* Notes */}
@@ -427,7 +452,7 @@ function EditRecipeContent({
                         {/* Source */}
                         <div>
                             <label htmlFor="source_url" className="block text-sm font-semibold text-gray-700 mb-2">
-                                Source <span className="text-xs font-normal text-gray-500">(URL or text, e.g. "Mom's Kitchen")</span>
+                                Source <span className="text-xs font-normal text-gray-500">(URL or text, e.g. &quot;Mom&apos;s Kitchen&quot;)</span>
                             </label>
                             <input
                                 type="text"
@@ -499,3 +524,4 @@ export default function EditRecipePage({
         </RequireAuth>
     );
 }
+

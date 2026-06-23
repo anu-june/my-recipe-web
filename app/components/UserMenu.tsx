@@ -1,6 +1,7 @@
 'use client';
 
 import { useAuth } from '@/app/context/AuthContext';
+import Image from 'next/image';
 import Link from 'next/link';
 
 export default function UserMenu() {
@@ -29,9 +30,12 @@ export default function UserMenu() {
     return (
         <div className="flex items-center gap-3 bg-white/90 backdrop-blur-sm px-3 py-2 rounded-lg shadow-md border border-stone-200">
             {user.user_metadata?.avatar_url && (
-                <img
+                <Image
                     src={user.user_metadata.avatar_url}
                     alt="Profile"
+                    width={32}
+                    height={32}
+                    unoptimized
                     className="w-8 h-8 rounded-full border border-stone-200"
                 />
             )}

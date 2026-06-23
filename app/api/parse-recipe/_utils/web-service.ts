@@ -1,3 +1,13 @@
+type JsonValue = string | number | boolean | null | JsonObject | JsonValue[];
+
+type JsonObject = {
+    [key: string]: JsonValue;
+};
+
+function isJsonObject(value: JsonValue | undefined): value is JsonObject {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
 export async function extractWebData(url: string): Promise<string> {
     try {
         const response = await fetch(url, {
@@ -31,19 +41,18 @@ export async function extractWebData(url: string): Promise<string> {
 
         if (jsonLdMatch && jsonLdMatch[1]) {
             try {
-                const jsonLd = JSON.parse(jsonLdMatch[1]);
-                // Find the Recipe object in the JSON-LD
-                let recipeObject = null;
+                const jsonLd = JSON.parse(jsonLdMatch[1]) as JsonValue;
 
-                const findRecipe = (obj: any): any => {
+                const findRecipe = (obj: JsonValue): JsonObject | null => {
                     if (!obj) return null;
                     if (Array.isArray(obj)) {
                         for (const item of obj) {
                             const found = findRecipe(item);
                             if (found) return found;
                         }
-                    } else if (typeof obj === 'object') {
-                        if (obj['@type'] === 'Recipe' || (Array.isArray(obj['@type']) && obj['@type'].includes('Recipe'))) {
+                    } else if (isJsonObject(obj)) {
+                        const typeValue = obj['@type'];
+                        if (typeValue === 'Recipe' || (Array.isArray(typeValue) && typeValue.includes('Recipe'))) {
                             return obj;
                         }
                         // Check @graph if present
@@ -54,7 +63,7 @@ export async function extractWebData(url: string): Promise<string> {
                     return null;
                 };
 
-                recipeObject = findRecipe(jsonLd);
+                const recipeObject = findRecipe(jsonLd);
 
                 if (recipeObject) {
                     contentToParse = JSON.stringify(recipeObject);

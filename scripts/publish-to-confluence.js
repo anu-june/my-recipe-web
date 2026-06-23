@@ -28,7 +28,7 @@ const {
 
 // Validate environment variables
 if (!CONFLUENCE_URL || !CONFLUENCE_EMAIL || !CONFLUENCE_API_TOKEN || !CONFLUENCE_SPACE_KEY) {
-    console.error('❌ Missing required environment variables. Check your .env.local file.');
+    console.error('ERROR: Missing required environment variables. Check your .env.local file.');
     console.error('Required: CONFLUENCE_URL, CONFLUENCE_EMAIL, CONFLUENCE_API_TOKEN, CONFLUENCE_SPACE_KEY');
     process.exit(1);
 }
@@ -185,40 +185,41 @@ async function updatePage(pageId, title, htmlContent, currentVersion) {
  */
 async function main() {
     try {
-        console.log('📖 Reading README.md...');
+        console.log('Reading README.md...');
         const readmePath = path.join(__dirname, '..', 'README.md');
         const markdown = fs.readFileSync(readmePath, 'utf-8');
 
-        console.log('🔄 Converting Markdown to HTML...');
+        console.log('Converting Markdown to HTML...');
         const htmlContent = markdownToHtml(markdown);
 
-        console.log('🔍 Looking up Confluence space...');
+        console.log('Looking up Confluence space...');
         const spaceId = await getSpaceId(CONFLUENCE_SPACE_KEY);
         console.log(`   Found space ID: ${spaceId}`);
 
         const pageTitle = 'Recipe Collection Web App - Documentation';
 
-        console.log(`🔍 Checking if page "${pageTitle}" exists...`);
+        console.log(`Checking Checking if page "${pageTitle}" exists...`);
         const existingPage = await findPageByTitle(spaceId, pageTitle);
 
         let result;
         if (existingPage) {
-            console.log(`📝 Updating existing page (version ${existingPage.version.number})...`);
+            console.log(`Writing Updating existing page (version ${existingPage.version.number})...`);
             result = await updatePage(existingPage.id, pageTitle, htmlContent, existingPage.version.number);
-            console.log(`✅ Page updated successfully!`);
+            console.log(`Success: Page updated successfully!`);
         } else {
-            console.log('📝 Creating new page...');
+            console.log('Writing Creating new page...');
             result = await createPage(spaceId, pageTitle, htmlContent);
-            console.log(`✅ Page created successfully!`);
+            console.log(`Success: Page created successfully!`);
         }
 
         const pageUrl = `${CONFLUENCE_URL}/wiki${result._links?.webui || '/spaces/' + CONFLUENCE_SPACE_KEY + '/pages/' + result.id}`;
-        console.log(`\n🔗 View your page: ${pageUrl}`);
+        console.log(`\nURL: View your page: ${pageUrl}`);
 
     } catch (error) {
-        console.error('❌ Error:', error.message);
+        console.error('ERROR: Error:', error.message);
         process.exit(1);
     }
 }
 
 main();
+
