@@ -7,7 +7,8 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "migrate": "tsx scripts/migrate-recipes.ts"
+    "migrate": "tsx scripts/migrate-recipes.ts",
+    "test:security": "node --import tsx --test tests/security.test.ts"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
@@ -16,7 +17,7 @@
     "@tailwindcss/typography": "^0.5.20",
     "@vercel/analytics": "^2.0.1",
     "marked": "^17.0.6",
-    "next": "^16.2.9",
+    "next": "^16.4.5",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-markdown": "^10.1.0",
@@ -30,7 +31,7 @@
     "babel-plugin-react-compiler": "1.0.0",
     "dotenv": "^17.4.2",
     "eslint": "^9.39.4",
-    "eslint-config-next": "^16.2.9",
+    "eslint-config-next": "^16.4.5",
     "tailwindcss": "^4.3.1",
     "tsx": "^4.22.4",
     "typescript": "^5"

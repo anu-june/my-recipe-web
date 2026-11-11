@@ -1,5 +1,4 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { supabase } from '@/lib/supabaseClient';
 import type { ParsedRecipe } from '@/lib/types';
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -85,42 +84,23 @@ RESPOND ONLY WITH VALID JSON in this exact format (no markdown, no extra text):
         const models = ['gemini-2.5-flash', 'gemini-3-flash-preview'];
         let lastError: Error | null = null;
 
-        for (const [index, modelName] of models.entries()) {
-            const startTime = Date.now();
-            let isSuccess = false;
-            let errorMsg = null;
+        for (const modelName of models) {
 
             try {
-                const model = genAI.getGenerativeModel({ model: modelName });
-                const result = await model.generateContent(prompt);
+                const model = genAI.getGenerativeModel({ model: modelName, generationConfig: { maxOutputTokens: 8192 } });
+                const result = await model.generateContent(prompt, { timeout: 20_000 });
                 const response = await result.response;
                 const text = response.text();
-                isSuccess = true;
                 return text;
             } catch (error) {
                 const message = getErrorMessage(error, 'Unknown Gemini error');
-                console.warn(`Model ${modelName} failed:`, message);
+                console.warn(`Model ${modelName} failed`);
                 lastError = error instanceof Error ? error : new Error(message);
-                errorMsg = message;
 
                 if (message.includes('429') || message.includes('503')) {
                     // Recoverable error — continue to next model
                 }
                 // For all other errors, loop continues to try remaining models
-            } finally {
-                // Log event to Supabase
-                const duration = Date.now() - startTime;
-                // Fire and forget logging
-                supabase.from('model_events').insert({
-                    model_name: modelName,
-                    status: isSuccess ? 'success' : 'failure',
-                    duration_ms: duration,
-                    error_message: errorMsg,
-                    fallback_occurred: index > 0, // 0 is primary, >0 is fallback
-                    recipe_source: contentToParse.substring(0, 100) // Log first 100 chars of source/URL
-                }).then(({ error }) => {
-                    if (error) console.error('Failed to log model event:', error);
-                });
             }
         }
         throw lastError ?? new Error('Gemini returned no response');
@@ -142,7 +122,7 @@ RESPOND ONLY WITH VALID JSON in this exact format (no markdown, no extra text):
         return recipeData;
 
     } catch (error) {
-        console.error('Gemini parsing error:', error);
+        console.error('Gemini parsing failed');
         throw error;
     }
 }

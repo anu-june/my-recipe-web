@@ -2,12 +2,15 @@
 
 import { useState } from 'react';
 import type { ParsedRecipe } from '@/lib/types';
+import { useAuth } from '@/app/context/AuthContext';
+import { MAX_INPUT_LENGTH } from '@/lib/import-limits';
 
 type RecipeImporterProps = {
     onRecipeParsed: (recipe: ParsedRecipe, sourceUrl?: string) => void;
 };
 
 export default function RecipeImporter({ onRecipeParsed }: RecipeImporterProps) {
+    const { session } = useAuth();
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -22,9 +25,10 @@ export default function RecipeImporter({ onRecipeParsed }: RecipeImporterProps) 
         setError('');
 
         try {
+            if (!session?.access_token) throw new Error('Please sign in again.');
             const response = await fetch('/api/parse-recipe', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
                 body: JSON.stringify({ input: input.trim() }),
             });
 
@@ -53,6 +57,7 @@ export default function RecipeImporter({ onRecipeParsed }: RecipeImporterProps) 
             </p>
 
             <textarea
+                maxLength={MAX_INPUT_LENGTH}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Paste recipe URL (e.g., https://www.allrecipes.com/...) 

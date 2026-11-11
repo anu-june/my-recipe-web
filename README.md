@@ -195,9 +195,39 @@ The app is set up for Vercel-style deployment:
 ## Known Maintenance Notes
 
 - Remaining `npm outdated` items are major-version jumps for `@types/node`, `marked`, and `typescript`.
-- Remaining `npm audit` findings are transitive to the current Next/PWA toolchain and would require breaking changes or forceful dependency moves.
+- Re-run `npm audit` before deployment; advisory data changes over time. See `dependency-security-audit.json` for the most recent local registry check.
 - On Windows, if build artifacts are locked, clearing `.next` or generated PWA files may be necessary before rebuilding.
 
 ## License
 
 MIT
+
+## Import security setup
+
+The recipe importer requires a verified Supabase bearer token and an administrator
+email. Set server-only `ADMIN_EMAILS` (comma-separated); if omitted, the server
+uses `NEXT_PUBLIC_ADMIN_EMAILS`. Keep the server allowlist, UI allowlist, and the
+existing database `public.is_admin()` function aligned. The database function is
+the final authority for the import limit and recipe writes.
+
+Apply `supabase/migrations/20261108_secure_recipe_import.sql` after the existing
+migrations. It adds an atomic limit of 10 imports per administrator per 10 minutes,
+removes anonymous model-log writes, and restricts existing log reads to admins.
+The importer returns 503 until this migration is applied; it does not bypass the
+limit on database failures. No Redis or service-role key is required. Failed
+imports also consume an attempt. Existing stored telemetry is retained; new
+imports no longer write input snippets or provider errors to `model_events`.
+
+Web and YouTube page downloads allow only public HTTP(S) addresses on standard
+ports, validate every redirect, pin DNS results, and limit downloads to 2 MB.
+Recipe inputs are limited to 40,000 characters. Confirm the deployed database has
+no additional permissive policies before treating these migrations as complete.
+
+Local security checks:
+
+```bash
+node --import tsx --test tests/security.test.ts
+node node_modules/typescript/bin/tsc --noEmit
+npm run lint
+npm run build
+```
